@@ -379,7 +379,7 @@ class HomePage extends StatelessWidget {
             SizedBox(
               height: 135,
               width: double.infinity,
-              child: Image.network(
+              child: Image.asset(
                 image,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
@@ -485,7 +485,7 @@ class HomePage extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
 
-            child: Image.network(
+            child: Image.asset(
               image,
               width: 62,
               height: 62,

@@ -30,6 +30,8 @@ class CafeDetailPage extends StatelessWidget {
             backgroundColor: AppTheme.background,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
+              color: const Color.fromARGB(255, 241, 238, 236),
+            
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
@@ -39,7 +41,7 @@ class CafeDetailPage extends StatelessWidget {
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.network(
+              background: Image.asset(
                 imageUrl,
                 fit: BoxFit.cover,
               ),
