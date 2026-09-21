@@ -1,75 +1,77 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class MenuCard extends StatelessWidget {
-  final IconData icon;
   final String title;
   final String subtitle;
+  final IconData icon;
+  final VoidCallback? onTap;
 
   const MenuCard({
     super.key,
-    required this.icon,
     required this.title,
     required this.subtitle,
+    required this.icon,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-
-        borderRadius: BorderRadius.circular(18),
-
-        border: Border.all(
-          color: Colors.white.withOpacity(0.08),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.05),
+          ),
         ),
-      ),
-
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-
-        children: [
-          Container(
-            width: 45,
-            height: 45,
-
-            decoration: BoxDecoration(
-              color: const Color(0xFF1765E8),
-
-              borderRadius: BorderRadius.circular(14),
+        child: Row(
+          children: [
+            Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                color: AppTheme.green.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                icon,
+                color: AppTheme.green,
+              ),
             ),
-
-            child: Icon(
-              icon,
-              color: Colors.white,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: AppTheme.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppTheme.grey,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-
-          const Spacer(),
-
-          Text(
-            title,
-
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
+            const Icon(
+              Icons.chevron_right,
+              color: AppTheme.grey,
             ),
-          ),
-
-          const SizedBox(height: 5),
-
-          Text(
-            subtitle,
-
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
-              fontSize: 12,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

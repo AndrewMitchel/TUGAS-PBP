@@ -2,22 +2,23 @@ import 'package:flutter/material.dart';
 import 'pages/login_page.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CoffeeFinderApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CoffeeFinderApp extends StatelessWidget {
+  const CoffeeFinderApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'My App',
+      title: 'Coffee Finder',
 
       theme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF02083B),
-        fontFamily: 'Arial',
+        brightness: Brightness.light,
+        scaffoldBackgroundColor:
+            const Color(0xFFF5F0E6),
+        useMaterial3: true,
       ),
 
       home: const LoginPage(),

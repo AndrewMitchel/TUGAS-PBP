@@ -1,83 +1,61 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
 
 class Background extends StatelessWidget {
-  final Widget child; // 1. Tambahkan variabel child
+  final Widget child;
 
-  // 2. Wajibkan parameter child di dalam constructor
-  const Background({super.key, required this.child});
+  const Background({
+    super.key,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.background,
-            AppTheme.darkBlue,
+            Color(0xFFF5F0E6),
+            Color(0xFFEDE3D2),
           ],
         ),
       ),
       child: Stack(
         children: [
-          // Bentuk biru kanan atas
+          // HIJAU HALUS - KANAN ATAS
           Positioned(
-            top: -120,
+            top: -100,
             right: -100,
             child: Container(
-              width: 330,
-              height: 330,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF084BFF),
-                    Color(0xFF031B87),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Bentuk biru kiri bawah
-          Positioned(
-            bottom: -150,
-            left: -120,
-            child: Container(
-              width: 350,
-              height: 350,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF064DFF),
-                    Color(0xFF02145D),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-          // Bentuk tambahan kanan
-          Positioned(
-            top: 70,
-            right: -130,
-            child: Container(
-              width: 320,
-              height: 320,
+              width: 280,
+              height: 280,
               decoration: BoxDecoration(
-                color: const Color(0xFF07165E).withOpacity(0.8),
-                borderRadius: BorderRadius.circular(160),
+                shape: BoxShape.circle,
+                color: const Color(0xFF006241)
+                    .withValues(alpha: 0.10),
               ),
             ),
           ),
 
-          // 3. Masukkan child di sini agar form login berada di lapisan teratas
-          SafeArea(
-            child: child,
+          // HIJAU HALUS - KIRI BAWAH
+          Positioned(
+            bottom: -120,
+            left: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFF006241)
+                    .withValues(alpha: 0.07),
+              ),
+            ),
           ),
+
+          child,
         ],
       ),
     );
