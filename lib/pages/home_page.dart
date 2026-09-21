@@ -8,7 +8,7 @@ import '../widgets/background.dart';
 import '../widgets/navbar.dart';
 import 'cafe_detail_page.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   final String username;
 
   const HomePage({
@@ -17,7 +17,67 @@ class HomePage extends StatelessWidget {
   });
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  // =====================================================
+  // SEARCH CONTROLLER
+  // =====================================================
+
+  final TextEditingController searchController =
+      TextEditingController();
+
+  List<String> searchResults = [];
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Awalnya semua cafe tersedia
+    searchResults = cafeData.keys.toList();
+
+    searchController.addListener(_searchCafe);
+  }
+
+  // =====================================================
+  // SEARCH LOGIC
+  // =====================================================
+
+  void _searchCafe() {
+    final keyword = searchController.text.toLowerCase().trim();
+
+    setState(() {
+      if (keyword.isEmpty) {
+        // Kalau search kosong → tampilkan semua cafe
+        searchResults = cafeData.keys.toList();
+      } else {
+        // Cari berdasarkan nama dan slogan
+        searchResults = cafeData.keys.where((tokoId) {
+          final cafe = cafeData[tokoId]!;
+
+          final name = cafe['name']!.toLowerCase();
+          final slogan = cafe['slogan']!.toLowerCase();
+
+          return name.contains(keyword) ||
+              slogan.contains(keyword);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    searchController.removeListener(_searchCafe);
+    searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bool isSearching =
+        searchController.text.trim().isNotEmpty;
+
     return Scaffold(
       backgroundColor: AppTheme.background,
 
@@ -28,7 +88,12 @@ class HomePage extends StatelessWidget {
       body: Background(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              100,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -40,10 +105,11 @@ class HomePage extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Hi, $username',
+                            'Hi, ${widget.username}',
                             style: const TextStyle(
                               color: AppTheme.white,
                               fontSize: 24,
@@ -118,29 +184,46 @@ class HomePage extends StatelessWidget {
                     color: AppTheme.card,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: AppTheme.green.withValues(alpha: 0.10),
+                      color: AppTheme.green
+                          .withValues(alpha: 0.10),
                     ),
                   ),
-                  child: const TextField(
-                    style: TextStyle(
+                  child: TextField(
+                    controller: searchController,
+                    style: const TextStyle(
                       color: AppTheme.white,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search coffee shop...',
-                      hintStyle: TextStyle(
+                      hintStyle: const TextStyle(
                         color: AppTheme.grey,
                         fontSize: 13,
                       ),
-                      prefixIcon: Icon(
+
+                      prefixIcon: const Icon(
                         Icons.search,
                         color: AppTheme.green,
                         size: 20,
                       ),
-                      suffixIcon: Icon(
-                        Icons.tune,
-                        color: AppTheme.green,
-                        size: 19,
-                      ),
+
+                      suffixIcon:
+                          searchController.text.isNotEmpty
+                              ? IconButton(
+                                  onPressed: () {
+                                    searchController.clear();
+                                  },
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: AppTheme.grey,
+                                    size: 19,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.tune,
+                                  color: AppTheme.green,
+                                  size: 19,
+                                ),
+
                       border: InputBorder.none,
                     ),
                   ),
@@ -149,88 +232,157 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 28),
 
                 // =====================================================
+                // SEARCH RESULT
+                // =====================================================
+
+                if (isSearching) ...[
+                  const Text(
+                    'Search Result',
+                    style: TextStyle(
+                      color: AppTheme.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 13),
+
+                  if (searchResults.isEmpty)
+                    _emptySearch()
+                  else
+                    ...searchResults.map((tokoId) {
+                      final cafe = cafeData[tokoId]!;
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CafeDetailPage(
+                                cafeName: cafe['name']!,
+                                rating: cafe['rating']!,
+                                distance:
+                                    cafe['distance']!,
+                                imageUrl: cafe['image']!,
+                                slogan: cafe['slogan']!,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _trendingCard(
+                          cafe['name']!,
+                          cafe['rating']!,
+                          cafe['distance']!,
+                          cafe['image']!,
+                        ),
+                      );
+                    }),
+
+                  const SizedBox(height: 20),
+                ],
+
+                // =====================================================
                 // RECOMMENDED
                 // =====================================================
 
-                _sectionTitle(
-                  'Recommended',
-                  'See all',
-                ),
+                if (!isSearching) ...[
+                  _sectionTitle(
+                    'Recommended',
+                    'See all',
+                  ),
 
-                const SizedBox(height: 13),
+                  const SizedBox(height: 13),
 
-                SizedBox(
-                  height: 205,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: recommendedCafes.length,
-                    itemBuilder: (context, index) {
-                      // Ambil ID toko dari recommended_data.dart
-                      final tokoId = recommendedCafes[index];
+                  SizedBox(
+                    height: 205,
+                    child: ListView.builder(
+                      scrollDirection:
+                          Axis.horizontal,
+                      itemCount:
+                          recommendedCafes.length,
+                      itemBuilder:
+                          (context, index) {
+                        // Ambil ID toko
+                        final tokoId =
+                            recommendedCafes[index];
 
-                      // Ambil data lengkap toko dari list_data.dart
-                      final cafe = cafeData[tokoId]!;
+                        // Ambil data lengkap
+                        final cafe =
+                            cafeData[tokoId]!;
 
-                      return _coffeeCard(
-                        context,
-                        cafe['name']!,
-                        cafe['distance']!,
-                        cafe['rating']!,
-                        cafe['image']!,
-                        cafe['slogan']!,
+                        return _coffeeCard(
+                          context,
+                          cafe['name']!,
+                          cafe['distance']!,
+                          cafe['rating']!,
+                          cafe['image']!,
+                          cafe['slogan']!,
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+
+                  // =====================================================
+                  // TRENDING COFFEE
+                  // =====================================================
+
+                  _sectionTitle(
+                    'Trending Coffee',
+                    'See all',
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics:
+                        const NeverScrollableScrollPhysics(),
+                    itemCount:
+                        trendingCafes.length,
+                    itemBuilder:
+                        (context, index) {
+                      // Ambil ID toko
+                      final tokoId =
+                          trendingCafes[index];
+
+                      // Ambil data lengkap
+                      final cafe =
+                          cafeData[tokoId]!;
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CafeDetailPage(
+                                cafeName:
+                                    cafe['name']!,
+                                rating:
+                                    cafe['rating']!,
+                                distance:
+                                    cafe['distance']!,
+                                imageUrl:
+                                    cafe['image']!,
+                                slogan:
+                                    cafe['slogan']!,
+                              ),
+                            ),
+                          );
+                        },
+                        child: _trendingCard(
+                          cafe['name']!,
+                          cafe['rating']!,
+                          cafe['distance']!,
+                          cafe['image']!,
+                        ),
                       );
                     },
                   ),
-                ),
-
-                const SizedBox(height: 28),
-
-                // =====================================================
-                // TRENDING COFFEE
-                // =====================================================
-
-                _sectionTitle(
-                  'Trending Coffee',
-                  'See all',
-                ),
-
-                const SizedBox(height: 10),
-
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: trendingCafes.length,
-                  itemBuilder: (context, index) {
-                    // Ambil ID toko dari trending_data.dart
-                    final tokoId = trendingCafes[index];
-
-                    // Ambil data lengkap toko dari list_data.dart
-                    final cafe = cafeData[tokoId]!;
-
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => CafeDetailPage(
-                              cafeName: cafe['name']!,
-                              rating: cafe['rating']!,
-                              distance: cafe['distance']!,
-                              imageUrl: cafe['image']!,
-                              slogan: cafe['slogan']!,
-                            ),
-                          ),
-                        );
-                      },
-                      child: _trendingCard(
-                        cafe['name']!,
-                        cafe['rating']!,
-                        cafe['distance']!,
-                        cafe['image']!,
-                      ),
-                    );
-                  },
-                ),
+                ],
               ],
             ),
           ),
@@ -242,7 +394,53 @@ class HomePage extends StatelessWidget {
       // =====================================================
 
       bottomNavigationBar: Navbar(
-        username: username,
+        username: widget.username,
+      ),
+    );
+  }
+
+  // =====================================================
+  // EMPTY SEARCH
+  // =====================================================
+
+  Widget _emptySearch() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        vertical: 50,
+      ),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(
+              Icons.search_off,
+              color: AppTheme.grey.withValues(
+                alpha: 0.7,
+              ),
+              size: 50,
+            ),
+
+            const SizedBox(height: 12),
+
+            const Text(
+              'Cafe tidak ditemukan',
+              style: TextStyle(
+                color: AppTheme.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 5),
+
+            const Text(
+              'Coba gunakan kata kunci lain.',
+              style: TextStyle(
+                color: AppTheme.grey,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -256,7 +454,8 @@ class HomePage extends StatelessWidget {
     String action,
   ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
       children: [
         Text(
           title,
@@ -266,6 +465,7 @@ class HomePage extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
+
         Text(
           action,
           style: const TextStyle(
@@ -304,19 +504,24 @@ class HomePage extends StatelessWidget {
           ),
         );
       },
+
       child: Container(
         width: 220,
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           color: AppTheme.card,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
           border: Border.all(
-            color: AppTheme.green.withValues(alpha: 0.10),
+            color: AppTheme.green
+                .withValues(alpha: 0.10),
           ),
         ),
         clipBehavior: Clip.antiAlias,
+
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             SizedBox(
               height: 135,
@@ -342,16 +547,20 @@ class HomePage extends StatelessWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.all(11),
+              padding:
+                  const EdgeInsets.all(11),
+
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
@@ -369,8 +578,10 @@ class HomePage extends StatelessWidget {
 
                       Text(
                         rating,
-                        style: const TextStyle(
-                          color: AppTheme.grey,
+                        style:
+                            const TextStyle(
+                          color:
+                              AppTheme.grey,
                           fontSize: 11,
                         ),
                       ),
@@ -387,8 +598,10 @@ class HomePage extends StatelessWidget {
 
                       Text(
                         distance,
-                        style: const TextStyle(
-                          color: AppTheme.grey,
+                        style:
+                            const TextStyle(
+                          color:
+                              AppTheme.grey,
                           fontSize: 11,
                         ),
                       ),
@@ -414,24 +627,34 @@ class HomePage extends StatelessWidget {
     String image,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(8),
+      margin:
+          const EdgeInsets.only(bottom: 10),
+
+      padding:
+          const EdgeInsets.all(8),
+
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius:
+            BorderRadius.circular(14),
         border: Border.all(
-          color: AppTheme.green.withValues(alpha: 0.10),
+          color: AppTheme.green
+              .withValues(alpha: 0.10),
         ),
       ),
+
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius:
+                BorderRadius.circular(10),
+
             child: Image.asset(
               image,
               width: 62,
               height: 62,
               fit: BoxFit.cover,
+
               errorBuilder: (
                 context,
                 error,
@@ -454,13 +677,15 @@ class HomePage extends StatelessWidget {
 
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   name,
                   style: const TextStyle(
                     color: AppTheme.white,
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                     fontSize: 13,
                   ),
                 ),
@@ -471,7 +696,8 @@ class HomePage extends StatelessWidget {
                   children: [
                     const Icon(
                       Icons.star,
-                      color: AppTheme.yellow,
+                      color:
+                          AppTheme.yellow,
                       size: 12,
                     ),
 
@@ -479,8 +705,10 @@ class HomePage extends StatelessWidget {
 
                     Text(
                       rating,
-                      style: const TextStyle(
-                        color: AppTheme.grey,
+                      style:
+                          const TextStyle(
+                        color:
+                            AppTheme.grey,
                         fontSize: 11,
                       ),
                     ),
@@ -489,7 +717,8 @@ class HomePage extends StatelessWidget {
 
                     const Icon(
                       Icons.location_on_outlined,
-                      color: AppTheme.green,
+                      color:
+                          AppTheme.green,
                       size: 12,
                     ),
 
@@ -497,8 +726,10 @@ class HomePage extends StatelessWidget {
 
                     Text(
                       distance,
-                      style: const TextStyle(
-                        color: AppTheme.grey,
+                      style:
+                          const TextStyle(
+                        color:
+                            AppTheme.grey,
                         fontSize: 11,
                       ),
                     ),
@@ -513,8 +744,10 @@ class HomePage extends StatelessWidget {
             height: 34,
             decoration: BoxDecoration(
               color: AppTheme.green,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius:
+                  BorderRadius.circular(10),
             ),
+
             child: const Icon(
               Icons.arrow_forward_ios,
               color: Colors.white,
