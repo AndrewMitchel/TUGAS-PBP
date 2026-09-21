@@ -1,105 +1,29 @@
 import 'package:flutter/material.dart';
 
+import '../models/list_data.dart';
+import '../models/recommended_data.dart';
+import '../models/trending_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/background.dart';
+import '../widgets/navbar.dart';
 import 'cafe_detail_page.dart';
-import 'explore_page.dart';
-import 'favorites_page.dart';
-import 'profile_page.dart';
 
 class HomePage extends StatelessWidget {
   final String username;
 
-  const HomePage({super.key, required this.username});
-
-  // =====================================================
-  // DATA RECOMMENDED
-  // =====================================================
-
-  static const List<Map<String, String>> recommendedCafes = [
-    {
-      'name': 'Terrace Cafe',
-      'distance': '1.2 km',
-      'rating': '4.8',
-      'image': 'assets/images/K1.jpg',
-      'slogan': 'Nikmati kopi dalam suasana yang tenang.',
-    },
-    {
-      'name': 'Kopi Senja',
-      'distance': '0.9 km',
-      'rating': '4.7',
-      'image': 'assets/images/K2.jpg',
-      'slogan': 'Secangkir kopi untuk menemani hari.',
-    },
-    {
-      'name': 'Lokal Coffee',
-      'distance': '1.5 km',
-      'rating': '4.6',
-      'image': 'assets/images/K3.jpg',
-      'slogan': 'Rasa lokal, cerita yang berkesan.',
-    },
-    {
-      'name': 'Kopi Tengah',
-      'distance': '1.8 km',
-      'rating': '4.7',
-      'image': 'assets/images/K4.jpg',
-      'slogan': 'Temukan waktu terbaik di tengah kesibukan.',
-    },
-  ];
-
-  // =====================================================
-  // DATA TRENDING
-  // =====================================================
-
-  static const List<Map<String, String>> trendingCafes = [
-    {
-      'name': 'Calibre Coffee',
-      'rating': '4.8',
-      'distance': '0.9 km',
-      'image': 'assets/images/K5.jpg',
-      'slogan': 'Coffee made for your everyday moments.',
-    },
-    {
-      'name': 'Monopole Coffee',
-      'rating': '4.6',
-      'distance': '1.5 km',
-      'image': 'assets/images/K6.jpg',
-      'slogan': 'A little coffee, a better day.',
-    },
-    {
-      'name': 'Sudut Kopi',
-      'rating': '4.5',
-      'distance': '2.1 km',
-      'image': 'assets/images/K7.jpg',
-      'slogan': 'Tempat sederhana untuk cerita luar biasa.',
-    },
-    {
-      'name': 'Satu Hari Kopi',
-      'rating': '4.5',
-      'distance': '2.4 km',
-      'image': 'assets/images/K8.jpg',
-      'slogan': 'Satu hari, satu cerita, satu cangkir kopi.',
-    },
-    {
-      'name': 'Kopi Rumah',
-      'rating': '4.7',
-      'distance': '2.8 km',
-      'image': 'assets/images/K9.jpg',
-      'slogan': 'Rasa nyaman seperti di rumah sendiri.',
-    },
-    {
-      'name': 'Kopi Kecil',
-      'rating': '5.0',
-      'distance': '3.0 km',
-      'image': 'assets/images/K10.jpg',
-      'slogan': 'Kecil tempatnya, besar rasanya.',
-    },
-  ];
+  const HomePage({
+    super.key,
+    required this.username,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
+
+      // =====================================================
+      // BODY
+      // =====================================================
 
       body: Background(
         child: SafeArea(
@@ -198,7 +122,9 @@ class HomePage extends StatelessWidget {
                     ),
                   ),
                   child: const TextField(
-                    style: TextStyle(color: AppTheme.white),
+                    style: TextStyle(
+                      color: AppTheme.white,
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Search coffee shop...',
                       hintStyle: TextStyle(
@@ -226,7 +152,10 @@ class HomePage extends StatelessWidget {
                 // RECOMMENDED
                 // =====================================================
 
-                _sectionTitle('Recommended', 'See all'),
+                _sectionTitle(
+                  'Recommended',
+                  'See all',
+                ),
 
                 const SizedBox(height: 13),
 
@@ -236,7 +165,11 @@ class HomePage extends StatelessWidget {
                     scrollDirection: Axis.horizontal,
                     itemCount: recommendedCafes.length,
                     itemBuilder: (context, index) {
-                      final cafe = recommendedCafes[index];
+                      // Ambil ID toko dari recommended_data.dart
+                      final tokoId = recommendedCafes[index];
+
+                      // Ambil data lengkap toko dari list_data.dart
+                      final cafe = cafeData[tokoId]!;
 
                       return _coffeeCard(
                         context,
@@ -256,7 +189,10 @@ class HomePage extends StatelessWidget {
                 // TRENDING COFFEE
                 // =====================================================
 
-                _sectionTitle('Trending Coffee', 'See all'),
+                _sectionTitle(
+                  'Trending Coffee',
+                  'See all',
+                ),
 
                 const SizedBox(height: 10),
 
@@ -265,7 +201,11 @@ class HomePage extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: trendingCafes.length,
                   itemBuilder: (context, index) {
-                    final cafe = trendingCafes[index];
+                    // Ambil ID toko dari trending_data.dart
+                    final tokoId = trendingCafes[index];
+
+                    // Ambil data lengkap toko dari list_data.dart
+                    final cafe = cafeData[tokoId]!;
 
                     return GestureDetector(
                       onTap: () {
@@ -301,7 +241,9 @@ class HomePage extends StatelessWidget {
       // BOTTOM NAVIGATION
       // =====================================================
 
-      bottomNavigationBar: _bottomNavigation(context),
+      bottomNavigationBar: Navbar(
+        username: username,
+      ),
     );
   }
 
@@ -309,7 +251,10 @@ class HomePage extends StatelessWidget {
   // SECTION TITLE
   // =====================================================
 
-  Widget _sectionTitle(String title, String action) {
+  Widget _sectionTitle(
+    String title,
+    String action,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -321,7 +266,6 @@ class HomePage extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-
         Text(
           action,
           style: const TextStyle(
@@ -360,7 +304,6 @@ class HomePage extends StatelessWidget {
           ),
         );
       },
-
       child: Container(
         width: 220,
         margin: const EdgeInsets.only(right: 14),
@@ -372,7 +315,6 @@ class HomePage extends StatelessWidget {
           ),
         ),
         clipBehavior: Clip.antiAlias,
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -382,7 +324,11 @@ class HomePage extends StatelessWidget {
               child: Image.asset(
                 image,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                errorBuilder: (
+                  context,
+                  error,
+                  stackTrace,
+                ) {
                   return Container(
                     color: AppTheme.cardLight,
                     child: const Icon(
@@ -397,7 +343,6 @@ class HomePage extends StatelessWidget {
 
             Padding(
               padding: const EdgeInsets.all(11),
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -471,7 +416,6 @@ class HomePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(8),
-
       decoration: BoxDecoration(
         color: AppTheme.card,
         borderRadius: BorderRadius.circular(14),
@@ -479,19 +423,20 @@ class HomePage extends StatelessWidget {
           color: AppTheme.green.withValues(alpha: 0.10),
         ),
       ),
-
       child: Row(
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-
             child: Image.asset(
               image,
               width: 62,
               height: 62,
               fit: BoxFit.cover,
-
-              errorBuilder: (context, error, stackTrace) {
+              errorBuilder: (
+                context,
+                error,
+                stackTrace,
+              ) {
                 return Container(
                   width: 62,
                   height: 62,
@@ -566,134 +511,14 @@ class HomePage extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
-
             decoration: BoxDecoration(
               color: AppTheme.green,
               borderRadius: BorderRadius.circular(10),
             ),
-
             child: const Icon(
               Icons.arrow_forward_ios,
               color: Colors.white,
               size: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =====================================================
-  // BOTTOM NAVIGATION
-  // =====================================================
-
-  Widget _bottomNavigation(BuildContext context) {
-    return Container(
-      height: 70,
-
-      decoration: BoxDecoration(
-        color: AppTheme.greenDark,
-        border: Border(
-          top: BorderSide(
-            color: Colors.white.withValues(alpha: 0.1),
-          ),
-        ),
-      ),
-
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-
-        children: [
-          _navItem(
-            Icons.home_outlined,
-            'Home',
-            true,
-            null,
-          ),
-
-          _navItem(
-            Icons.search,
-            'Explore',
-            false,
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ExplorePage(),
-                ),
-              );
-            },
-          ),
-
-          _navItem(
-            Icons.favorite_border,
-            'Favorites',
-            false,
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const FavoritesPage(),
-                ),
-              );
-            },
-          ),
-
-          _navItem(
-            Icons.person_outline,
-            'Profile',
-            false,
-            () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ProfilePage(
-                    username: username,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  // =====================================================
-  // NAV ITEM
-  // =====================================================
-
-  Widget _navItem(
-    IconData icon,
-    String label,
-    bool active,
-    VoidCallback? onTap,
-  ) {
-    return GestureDetector(
-      onTap: onTap,
-
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-
-        children: [
-          Icon(
-            icon,
-            color: Colors.white,
-            size: 21,
-          ),
-
-          const SizedBox(height: 4),
-
-          Text(
-            label,
-            style: TextStyle(
-              color: active
-                  ? Colors.white
-                  : Colors.white.withValues(alpha: 0.6),
-              fontSize: 10,
-              fontWeight: active
-                  ? FontWeight.bold
-                  : FontWeight.normal,
             ),
           ),
         ],
