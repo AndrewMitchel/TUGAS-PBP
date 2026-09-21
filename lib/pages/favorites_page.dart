@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/list_data.dart';
 import '../theme/app_theme.dart';
 import 'cafe_detail_page.dart';
 
@@ -12,37 +13,12 @@ class FavoritesPage extends StatelessWidget {
     // DATA FAVORITES
     // =====================================================
 
-    final cafes = [
-      [
-        'Terrace Cafe',
-        '4.8',
-        '1.2 km',
-        'assets/images/K1.jpg',
-      ],
-      [
-        'Kopi Senja',
-        '4.7',
-        '0.8 km',
-        'assets/images/K2.jpg',
-      ],
-      [
-        'Lokal Coffee',
-        '4.6',
-        '1.5 km',
-        'assets/images/K3.jpg',
-      ],
-      [
-        'Monopole Coffee',
-        '4.5',
-        '2.1 km',
-        'assets/images/K6.jpg',
-      ],
-      [
-        'Sudut Kopi',
-        '4.4',
-        '2.8 km',
-        'assets/images/K7.jpg',
-      ],
+    final favoriteCafes = [
+      'toko1',
+      'toko2',
+      'toko3',
+      'toko6',
+      'toko7',
     ];
 
     return Scaffold(
@@ -68,10 +44,10 @@ class FavoritesPage extends StatelessWidget {
 
       body: ListView.builder(
         padding: const EdgeInsets.all(20),
-        itemCount: cafes.length,
-
+        itemCount: favoriteCafes.length,
         itemBuilder: (context, index) {
-          final cafe = cafes[index];
+          final tokoId = favoriteCafes[index];
+          final cafe = cafeData[tokoId]!;
 
           return GestureDetector(
             // =====================================================
@@ -83,11 +59,12 @@ class FavoritesPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => CafeDetailPage(
-                    cafeName: cafe[0],
-                    rating: cafe[1],
-                    distance: cafe[2],
-                    imageUrl: cafe[3],
-                    slogan: 'Temukan kopi favoritmu di sini.',
+                    cafeName: cafe['name']!,
+                    rating: cafe['rating']!,
+                    distance: cafe['distance']!,
+                    imageUrl: cafe['image']!,
+                    slogan: cafe['slogan']!,
+                    mapUrl: cafe['mapUrl']!,
                   ),
                 ),
               );
@@ -110,13 +87,11 @@ class FavoritesPage extends StatelessWidget {
 
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
-
                     child: Image.asset(
-                      cafe[3],
+                      cafe['image']!,
                       width: 70,
                       height: 70,
                       fit: BoxFit.cover,
-
                       errorBuilder: (
                         context,
                         error,
@@ -126,7 +101,6 @@ class FavoritesPage extends StatelessWidget {
                           width: 70,
                           height: 70,
                           color: AppTheme.cardLight,
-
                           child: const Icon(
                             Icons.coffee,
                             color: AppTheme.green,
@@ -146,11 +120,9 @@ class FavoritesPage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
-
                       children: [
                         Text(
-                          cafe[0],
-
+                          cafe['name']!,
                           style: const TextStyle(
                             color: AppTheme.white,
                             fontWeight: FontWeight.w600,
@@ -170,8 +142,7 @@ class FavoritesPage extends StatelessWidget {
                             const SizedBox(width: 4),
 
                             Text(
-                              cafe[1],
-
+                              cafe['rating']!,
                               style: const TextStyle(
                                 color: AppTheme.grey,
                                 fontSize: 11,
@@ -189,8 +160,7 @@ class FavoritesPage extends StatelessWidget {
                             const SizedBox(width: 3),
 
                             Text(
-                              cafe[2],
-
+                              cafe['distance']!,
                               style: const TextStyle(
                                 color: AppTheme.grey,
                                 fontSize: 11,

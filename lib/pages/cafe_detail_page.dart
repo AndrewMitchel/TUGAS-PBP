@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
@@ -8,6 +9,7 @@ class CafeDetailPage extends StatelessWidget {
   final String distance;
   final String imageUrl;
   final String slogan;
+  final String mapUrl;
 
   const CafeDetailPage({
     super.key,
@@ -16,6 +18,7 @@ class CafeDetailPage extends StatelessWidget {
     required this.distance,
     required this.imageUrl,
     required this.slogan,
+    required this.mapUrl,
   });
 
   @override
@@ -24,22 +27,36 @@ class CafeDetailPage extends StatelessWidget {
       backgroundColor: AppTheme.background,
       body: CustomScrollView(
         slivers: [
+          // =====================================================
+          // FOTO CAFE
+          // =====================================================
+
           SliverAppBar(
             expandedHeight: 280,
             pinned: true,
             backgroundColor: AppTheme.background,
+
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              color: const Color.fromARGB(255, 241, 238, 236),
-            
+              color: const Color.fromARGB(
+                255,
+                241,
+                238,
+                236,
+              ),
               onPressed: () => Navigator.pop(context),
             ),
+
             actions: [
               IconButton(
-                icon: const Icon(Icons.favorite_border),
+                icon: const Icon(
+                  Icons.favorite_border,
+                  color: Colors.white,
+                ),
                 onPressed: () {},
               ),
             ],
+
             flexibleSpace: FlexibleSpaceBar(
               background: Image.asset(
                 imageUrl,
@@ -48,14 +65,19 @@ class CafeDetailPage extends StatelessWidget {
             ),
           ),
 
+          // =====================================================
+          // DETAIL CAFE
+          // =====================================================
+
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   // =====================================================
-                  // CAFE NAME + RATING
+                  // NAMA + RATING
                   // =====================================================
 
                   Row(
@@ -70,12 +92,15 @@ class CafeDetailPage extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       const Icon(
                         Icons.star,
                         color: AppTheme.yellow,
                         size: 18,
                       ),
+
                       const SizedBox(width: 4),
+
                       Text(
                         rating,
                         style: const TextStyle(
@@ -88,7 +113,7 @@ class CafeDetailPage extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // =====================================================
-                  // DISTANCE
+                  // JARAK
                   // =====================================================
 
                   Row(
@@ -98,7 +123,9 @@ class CafeDetailPage extends StatelessWidget {
                         color: AppTheme.grey,
                         size: 16,
                       ),
+
                       const SizedBox(width: 4),
+
                       Text(
                         '$distance away',
                         style: const TextStyle(
@@ -108,23 +135,28 @@ class CafeDetailPage extends StatelessWidget {
                     ],
                   ),
 
-                  // =====================================================
-                  // SLOGAN
-                  // =====================================================
-
-                 
-
                   const SizedBox(height: 22),
 
                   // =====================================================
-                  // TAGS
+                  // TAG
                   // =====================================================
 
                   Row(
                     children: [
-                      _tag(Icons.coffee, 'Coffee'),
-                      _tag(Icons.restaurant, 'Food'),
-                      _tag(Icons.wifi, 'WiFi'),
+                      _tag(
+                        Icons.coffee,
+                        'Coffee',
+                      ),
+
+                      _tag(
+                        Icons.restaurant,
+                        'Food',
+                      ),
+
+                      _tag(
+                        Icons.wifi,
+                        'WiFi',
+                      ),
                     ],
                   ),
 
@@ -157,7 +189,7 @@ class CafeDetailPage extends StatelessWidget {
                   const SizedBox(height: 25),
 
                   // =====================================================
-                  // FACILITIES
+                  // FASILITAS
                   // =====================================================
 
                   const Text(
@@ -173,10 +205,25 @@ class CafeDetailPage extends StatelessWidget {
 
                   Row(
                     children: [
-                      _facility(Icons.coffee, 'Coffee'),
-                      _facility(Icons.wifi, 'WiFi'),
-                      _facility(Icons.power, 'Outlet'),
-                      _facility(Icons.ac_unit, 'AC'),
+                      _facility(
+                        Icons.coffee,
+                        'Coffee',
+                      ),
+
+                      _facility(
+                        Icons.wifi,
+                        'WiFi',
+                      ),
+
+                      _facility(
+                        Icons.power,
+                        'Outlet',
+                      ),
+
+                      _facility(
+                        Icons.ac_unit,
+                        'AC',
+                      ),
                     ],
                   ),
 
@@ -190,11 +237,26 @@ class CafeDetailPage extends StatelessWidget {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton.icon(
-                      onPressed: () {},
+                      onPressed: () async {
+                        if (mapUrl.isEmpty) {
+                          return;
+                        }
+
+                        final uri = Uri.parse(mapUrl);
+
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+
                       icon: const Icon(
                         Icons.location_on_outlined,
                         color: Colors.black,
                       ),
+
                       label: const Text(
                         'View Location',
                         style: TextStyle(
@@ -202,10 +264,13 @@ class CafeDetailPage extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.green,
+
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+                          borderRadius:
+                              BorderRadius.circular(15),
                         ),
                       ),
                     ),
@@ -225,30 +290,38 @@ class CafeDetailPage extends StatelessWidget {
   // TAG
   // =====================================================
 
-  Widget _tag(IconData icon, String text) {
+  Widget _tag(
+    IconData icon,
+    String text,
+  ) {
     return Container(
-      margin: const EdgeInsets.only(right: 7),
+      margin: const EdgeInsets.only(right: 8),
+
       padding: const EdgeInsets.symmetric(
-        horizontal: 10,
+        horizontal: 12,
         vertical: 8,
       ),
+
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(20),
       ),
+
       child: Row(
         children: [
           Icon(
             icon,
             color: AppTheme.green,
-            size: 13,
+            size: 14,
           ),
-          const SizedBox(width: 4),
+
+          const SizedBox(width: 5),
+
           Text(
             text,
             style: const TextStyle(
               color: AppTheme.grey,
-              fontSize: 10,
+              fontSize: 11,
             ),
           ),
         ],
@@ -260,24 +333,21 @@ class CafeDetailPage extends StatelessWidget {
   // FACILITY
   // =====================================================
 
-  Widget _facility(IconData icon, String text) {
+  Widget _facility(
+    IconData icon,
+    String text,
+  ) {
     return Expanded(
       child: Column(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppTheme.card,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: AppTheme.grey,
-              size: 18,
-            ),
+          Icon(
+            icon,
+            color: AppTheme.green,
+            size: 20,
           ),
-          const SizedBox(height: 6),
+
+          const SizedBox(height: 5),
+
           Text(
             text,
             style: const TextStyle(

@@ -49,10 +49,8 @@ class _HomePageState extends State<HomePage> {
 
     setState(() {
       if (keyword.isEmpty) {
-        // Kalau search kosong → tampilkan semua cafe
         searchResults = cafeData.keys.toList();
       } else {
-        // Cari berdasarkan nama dan slogan
         searchResults = cafeData.keys.where((tokoId) {
           final cafe = cafeData[tokoId]!;
 
@@ -258,14 +256,13 @@ class _HomePageState extends State<HomePage> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  CafeDetailPage(
+                              builder: (_) => CafeDetailPage(
                                 cafeName: cafe['name']!,
                                 rating: cafe['rating']!,
-                                distance:
-                                    cafe['distance']!,
+                                distance: cafe['distance']!,
                                 imageUrl: cafe['image']!,
                                 slogan: cafe['slogan']!,
+                                mapUrl: cafe['mapUrl']!,
                               ),
                             ),
                           );
@@ -283,10 +280,14 @@ class _HomePageState extends State<HomePage> {
                 ],
 
                 // =====================================================
-                // RECOMMENDED
+                // NORMAL HOME CONTENT
                 // =====================================================
 
                 if (!isSearching) ...[
+                  // =====================================================
+                  // RECOMMENDED
+                  // =====================================================
+
                   _sectionTitle(
                     'Recommended',
                     'See all',
@@ -297,17 +298,12 @@ class _HomePageState extends State<HomePage> {
                   SizedBox(
                     height: 205,
                     child: ListView.builder(
-                      scrollDirection:
-                          Axis.horizontal,
-                      itemCount:
-                          recommendedCafes.length,
-                      itemBuilder:
-                          (context, index) {
-                        // Ambil ID toko
+                      scrollDirection: Axis.horizontal,
+                      itemCount: recommendedCafes.length,
+                      itemBuilder: (context, index) {
                         final tokoId =
                             recommendedCafes[index];
 
-                        // Ambil data lengkap
                         final cafe =
                             cafeData[tokoId]!;
 
@@ -318,6 +314,7 @@ class _HomePageState extends State<HomePage> {
                           cafe['rating']!,
                           cafe['image']!,
                           cafe['slogan']!,
+                          cafe['mapUrl']!,
                         );
                       },
                     ),
@@ -340,15 +337,11 @@ class _HomePageState extends State<HomePage> {
                     shrinkWrap: true,
                     physics:
                         const NeverScrollableScrollPhysics(),
-                    itemCount:
-                        trendingCafes.length,
-                    itemBuilder:
-                        (context, index) {
-                      // Ambil ID toko
+                    itemCount: trendingCafes.length,
+                    itemBuilder: (context, index) {
                       final tokoId =
                           trendingCafes[index];
 
-                      // Ambil data lengkap
                       final cafe =
                           cafeData[tokoId]!;
 
@@ -369,6 +362,8 @@ class _HomePageState extends State<HomePage> {
                                     cafe['image']!,
                                 slogan:
                                     cafe['slogan']!,
+                                mapUrl:
+                                    cafe['mapUrl']!,
                               ),
                             ),
                           );
@@ -488,6 +483,7 @@ class _HomePageState extends State<HomePage> {
     String rating,
     String image,
     String slogan,
+    String mapUrl,
   ) {
     return GestureDetector(
       onTap: () {
@@ -500,6 +496,7 @@ class _HomePageState extends State<HomePage> {
               distance: distance,
               imageUrl: image,
               slogan: slogan,
+              mapUrl: mapUrl,
             ),
           ),
         );
@@ -510,8 +507,7 @@ class _HomePageState extends State<HomePage> {
         margin: const EdgeInsets.only(right: 14),
         decoration: BoxDecoration(
           color: AppTheme.card,
-          borderRadius:
-              BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: AppTheme.green
                 .withValues(alpha: 0.10),
@@ -559,8 +555,7 @@ class _HomePageState extends State<HomePage> {
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
@@ -578,10 +573,8 @@ class _HomePageState extends State<HomePage> {
 
                       Text(
                         rating,
-                        style:
-                            const TextStyle(
-                          color:
-                              AppTheme.grey,
+                        style: const TextStyle(
+                          color: AppTheme.grey,
                           fontSize: 11,
                         ),
                       ),
@@ -598,10 +591,8 @@ class _HomePageState extends State<HomePage> {
 
                       Text(
                         distance,
-                        style:
-                            const TextStyle(
-                          color:
-                              AppTheme.grey,
+                        style: const TextStyle(
+                          color: AppTheme.grey,
                           fontSize: 11,
                         ),
                       ),

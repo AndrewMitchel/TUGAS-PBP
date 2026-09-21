@@ -12,7 +12,8 @@ class ExplorePage extends StatefulWidget {
 }
 
 class _ExplorePageState extends State<ExplorePage> {
-  final TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController =
+      TextEditingController();
 
   // Semua toko diambil dari list_data.dart
   List<String> cafes = [];
@@ -26,15 +27,17 @@ class _ExplorePageState extends State<ExplorePage> {
     searchController.addListener(_searchCafe);
   }
 
+  // =====================================================
+  // SEARCH LOGIC
+  // =====================================================
+
   void _searchCafe() {
     final keyword = searchController.text.toLowerCase().trim();
 
     setState(() {
       if (keyword.isEmpty) {
-        // Kalau search kosong, tampilkan semua cafe
         cafes = cafeData.keys.toList();
       } else {
-        // Filter berdasarkan nama cafe
         cafes = cafeData.keys.where((tokoId) {
           final cafe = cafeData[tokoId]!;
 
@@ -60,6 +63,10 @@ class _ExplorePageState extends State<ExplorePage> {
     return Scaffold(
       backgroundColor: AppTheme.background,
 
+      // =====================================================
+      // APP BAR
+      // =====================================================
+
       appBar: AppBar(
         backgroundColor: AppTheme.background,
         elevation: 0,
@@ -83,12 +90,17 @@ class _ExplorePageState extends State<ExplorePage> {
         ],
       ),
 
+      // =====================================================
+      // BODY
+      // =====================================================
+
       body: SafeArea(
         child: Column(
           children: [
-            // =========================
+            // =====================================================
             // SEARCH BAR
-            // =========================
+            // =====================================================
+
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 20,
@@ -123,7 +135,6 @@ class _ExplorePageState extends State<ExplorePage> {
                       size: 20,
                     ),
 
-                    // Tombol X muncul kalau sedang mengetik
                     suffixIcon: searchController.text.isNotEmpty
                         ? IconButton(
                             onPressed: () {
@@ -143,9 +154,10 @@ class _ExplorePageState extends State<ExplorePage> {
               ),
             ),
 
-            // =========================
+            // =====================================================
             // HASIL PENCARIAN
-            // =========================
+            // =====================================================
+
             Expanded(
               child: cafes.isEmpty
                   ? _emptySearch()
@@ -168,6 +180,7 @@ class _ExplorePageState extends State<ExplorePage> {
                           cafe['distance']!,
                           cafe['image']!,
                           cafe['slogan']!,
+                          cafe['mapUrl']!,
                         );
                       },
                     ),
@@ -178,9 +191,9 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 
-  // =========================
+  // =====================================================
   // CAFE ITEM
-  // =========================
+  // =====================================================
 
   Widget _cafeItem(
     BuildContext context,
@@ -189,6 +202,7 @@ class _ExplorePageState extends State<ExplorePage> {
     String distance,
     String image,
     String slogan,
+    String mapUrl,
   ) {
     return GestureDetector(
       onTap: () {
@@ -201,6 +215,7 @@ class _ExplorePageState extends State<ExplorePage> {
               distance: distance,
               imageUrl: image,
               slogan: slogan,
+              mapUrl: mapUrl,
             ),
           ),
         );
@@ -336,9 +351,9 @@ class _ExplorePageState extends State<ExplorePage> {
     );
   }
 
-  // =========================
+  // =====================================================
   // KALAU HASIL 0
-  // =========================
+  // =====================================================
 
   Widget _emptySearch() {
     return Center(

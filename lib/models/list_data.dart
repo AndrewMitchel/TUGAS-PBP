@@ -5,6 +5,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.8',
     'image': 'assets/images/K1.jpg',
     'slogan': 'Nikmati kopi dalam suasana yang tenang.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko2': {
@@ -13,6 +14,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.7',
     'image': 'assets/images/K2.jpg',
     'slogan': 'Secangkir kopi untuk menemani hari.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko3': {
@@ -21,6 +23,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.6',
     'image': 'assets/images/K3.jpg',
     'slogan': 'Rasa lokal, cerita yang berkesan.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko4': {
@@ -29,6 +32,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.7',
     'image': 'assets/images/K4.jpg',
     'slogan': 'Temukan waktu terbaik di tengah kesibukan.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko5': {
@@ -37,6 +41,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.8',
     'image': 'assets/images/K5.jpg',
     'slogan': 'Coffee made for your everyday moments.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko6': {
@@ -45,6 +50,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.6',
     'image': 'assets/images/K6.jpg',
     'slogan': 'A little coffee, a better day.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko7': {
@@ -53,6 +59,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.5',
     'image': 'assets/images/K7.jpg',
     'slogan': 'Tempat sederhana untuk cerita luar biasa.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko8': {
@@ -61,6 +68,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.5',
     'image': 'assets/images/K8.jpg',
     'slogan': 'Satu hari, satu cerita, satu cangkir kopi.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko9': {
@@ -69,6 +77,7 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '4.7',
     'image': 'assets/images/K9.jpg',
     'slogan': 'Rasa nyaman seperti di rumah sendiri.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 
   'toko10': {
@@ -77,5 +86,6 @@ const Map<String, Map<String, String>> cafeData = {
     'rating': '5.0',
     'image': 'assets/images/K10.jpg',
     'slogan': 'Kecil tempatnya, besar rasanya.',
+    'mapUrl': 'https://maps.app.goo.gl/G5FEuDvEEmsGyBL7A',
   },
 };
