@@ -55,10 +55,10 @@ class _HomePageState extends State<HomePage> {
           final cafe = cafeData[tokoId]!;
 
           final name = cafe['name']!.toLowerCase();
-          final slogan = cafe['slogan']!.toLowerCase();
+          final about = cafe['about']!.toLowerCase();
 
           return name.contains(keyword) ||
-              slogan.contains(keyword);
+              about.contains(keyword);
         }).toList();
       }
     });
@@ -261,7 +261,7 @@ class _HomePageState extends State<HomePage> {
                                 rating: cafe['rating']!,
                                 distance: cafe['distance']!,
                                 imageUrl: cafe['image']!,
-                                slogan: cafe['slogan']!,
+                                about: cafe['about']!,
                                 mapUrl: cafe['mapUrl']!,
                               ),
                             ),
@@ -313,7 +313,7 @@ class _HomePageState extends State<HomePage> {
                           cafe['distance']!,
                           cafe['rating']!,
                           cafe['image']!,
-                          cafe['slogan']!,
+                          cafe['about']!,
                           cafe['mapUrl']!,
                         );
                       },
@@ -360,8 +360,8 @@ class _HomePageState extends State<HomePage> {
                                     cafe['distance']!,
                                 imageUrl:
                                     cafe['image']!,
-                                slogan:
-                                    cafe['slogan']!,
+                                about:
+                                    cafe['about']!,
                                 mapUrl:
                                     cafe['mapUrl']!,
                               ),
@@ -482,7 +482,7 @@ class _HomePageState extends State<HomePage> {
     String distance,
     String rating,
     String image,
-    String slogan,
+    String about,
     String mapUrl,
   ) {
     return GestureDetector(
@@ -495,7 +495,7 @@ class _HomePageState extends State<HomePage> {
               rating: rating,
               distance: distance,
               imageUrl: image,
-              slogan: slogan,
+              about: about,
               mapUrl: mapUrl,
             ),
           ),

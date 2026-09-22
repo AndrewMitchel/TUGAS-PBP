@@ -63,7 +63,7 @@ class FavoritesPage extends StatelessWidget {
                     rating: cafe['rating']!,
                     distance: cafe['distance']!,
                     imageUrl: cafe['image']!,
-                    slogan: cafe['slogan']!,
+                    about: cafe['about']!,
                     mapUrl: cafe['mapUrl']!,
                   ),
                 ),

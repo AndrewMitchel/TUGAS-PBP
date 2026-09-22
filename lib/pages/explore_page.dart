@@ -42,10 +42,10 @@ class _ExplorePageState extends State<ExplorePage> {
           final cafe = cafeData[tokoId]!;
 
           final name = cafe['name']!.toLowerCase();
-          final slogan = cafe['slogan']!.toLowerCase();
+          final about = cafe['about']!.toLowerCase();
 
           return name.contains(keyword) ||
-              slogan.contains(keyword);
+              about.contains(keyword);
         }).toList();
       }
     });
@@ -179,7 +179,7 @@ class _ExplorePageState extends State<ExplorePage> {
                           cafe['rating']!,
                           cafe['distance']!,
                           cafe['image']!,
-                          cafe['slogan']!,
+                          cafe['about']!,
                           cafe['mapUrl']!,
                         );
                       },
@@ -201,7 +201,7 @@ class _ExplorePageState extends State<ExplorePage> {
     String rating,
     String distance,
     String image,
-    String slogan,
+    String about,
     String mapUrl,
   ) {
     return GestureDetector(
@@ -214,7 +214,7 @@ class _ExplorePageState extends State<ExplorePage> {
               rating: rating,
               distance: distance,
               imageUrl: image,
-              slogan: slogan,
+              about: about,
               mapUrl: mapUrl,
             ),
           ),
@@ -317,7 +317,7 @@ class _ExplorePageState extends State<ExplorePage> {
                   const SizedBox(height: 5),
 
                   Text(
-                    slogan,
+                    about,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

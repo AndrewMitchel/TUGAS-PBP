@@ -8,7 +8,7 @@ class CafeDetailPage extends StatelessWidget {
   final String rating;
   final String distance;
   final String imageUrl;
-  final String slogan;
+  final String about;
   final String mapUrl;
 
   const CafeDetailPage({
@@ -17,7 +17,7 @@ class CafeDetailPage extends StatelessWidget {
     required this.rating,
     required this.distance,
     required this.imageUrl,
-    required this.slogan,
+    required this.about,
     required this.mapUrl,
   });
 
@@ -178,7 +178,7 @@ class CafeDetailPage extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   Text(
-                    slogan,
+                    about,
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
