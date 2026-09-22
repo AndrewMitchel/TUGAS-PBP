@@ -1,9 +1,20 @@
+
 import 'package:flutter/material.dart';
+
 import 'pages/login_page.dart';
+import 'theme/app_theme.dart';
+
+// =====================================================
+// MAIN
+// =====================================================
 
 void main() {
   runApp(const CoffeeFinderApp());
 }
+
+// =====================================================
+// COFFEE FINDER APP
+// =====================================================
 
 class CoffeeFinderApp extends StatelessWidget {
   const CoffeeFinderApp({super.key});
@@ -12,14 +23,18 @@ class CoffeeFinderApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+
       title: 'Coffee Finder',
 
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor:
-            const Color(0xFFF5F0E6),
-        useMaterial3: true,
-      ),
+      // =====================================================
+      // THEME
+      // =====================================================
+
+      theme: AppTheme.lightTheme,
+
+      // =====================================================
+      // HALAMAN AWAL
+      // =====================================================
 
       home: const LoginPage(),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/user_profile.dart';
 import '../widgets/background.dart';
 import '../theme/app_theme.dart';
 import 'home_page.dart';
@@ -24,7 +25,10 @@ class _LoginPageState extends State<LoginPage> {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
 
+    // =====================================================
     // VALIDASI LOGIN
+    // =====================================================
+
     if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -37,7 +41,16 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    // =====================================================
+    // SIMPAN USERNAME YANG SEDANG LOGIN
+    // =====================================================
+
+    UserProfile.setUsername(username);
+
+    // =====================================================
     // MASUK KE HOME
+    // =====================================================
+
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -77,14 +90,15 @@ class _LoginPageState extends State<LoginPage> {
                   // ICON COFFEE
                   // =========================
 
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Image.asset(
-                        'assets/images/Logo.png',
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                     ),
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/Logo.png',
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
                   ),
 
                   const SizedBox(height: 30),
@@ -206,7 +220,7 @@ class _LoginPageState extends State<LoginPage> {
                   // FOOTER
                   // =========================
 
-                       Center(
+                  Center(
                     child: Text(
                       'Secangkir Kopi, Teman di Hari ini',
                       style: TextStyle(
@@ -216,7 +230,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-
 
                   const SizedBox(height: 40),
                 ],

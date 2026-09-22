@@ -3,16 +3,20 @@ import 'package:flutter/material.dart';
 import '../fungsi/filter.dart';
 import '../fungsi/lokasi_user.dart';
 import '../fungsi/search.dart';
+import '../fungsi/user_profile.dart';
 import '../models/list_data.dart';
 import '../models/recommended_data.dart';
 import '../models/trending_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/background.dart';
+import '../widgets/coffee_card.dart';
+import '../widgets/empty_search.dart';
 import '../widgets/filter_sheet.dart';
 import '../widgets/navbar.dart';
+import '../widgets/section_title.dart';
+import '../widgets/trending_card.dart';
 import 'cafe_detail_page.dart';
 import 'profile_page.dart';
-import 'list_cafe.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
@@ -53,20 +57,67 @@ class _HomePageState extends State<HomePage> {
 
   bool isLoadingLocation = false;
 
+  // =====================================================
+  // USERNAME
+  // =====================================================
+
+  late String currentUsername;
+
   @override
   void initState() {
     super.initState();
 
-    // Awalnya semua cafe tersedia
-    searchResults = SearchFunction.searchCafe('');
+    // =====================================================
+    // SET USERNAME AWAL
+    // =====================================================
+
+    currentUsername =
+        UserProfile.username.value ?? widget.username;
+
+    // =====================================================
+    // DENGARKAN PERUBAHAN USERNAME
+    // =====================================================
+
+    UserProfile.username.addListener(
+      _usernameChanged,
+    );
+
+    // =====================================================
+    // SEARCH AWAL
+    // =====================================================
+
+    searchResults =
+        SearchFunction.searchCafe('');
 
     searchController.addListener(_searchCafe);
 
     // =====================================================
-    // OTOMATIS CARI LOKASI SAAT HOME DIBUKA
+    // OTOMATIS CARI LOKASI
     // =====================================================
 
     _getUserLocation();
+  }
+
+  // =====================================================
+  // USERNAME BERUBAH
+  // =====================================================
+
+  void _usernameChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    final String? newUsername =
+        UserProfile.username.value;
+
+    if (newUsername == null ||
+        newUsername.isEmpty) {
+      return;
+    }
+
+    setState(() {
+      currentUsername = newUsername;
+    });
   }
 
   // =====================================================
@@ -93,12 +144,12 @@ class _HomePageState extends State<HomePage> {
     }
 
     // =====================================================
-    // KALAU SEARCH DIKOSONGKAN
-    // KEMBALI KE FILTER JIKA FILTER AKTIF
+    // KALAU FILTER AKTIF
     // =====================================================
 
     if (isFiltering) {
-      final result = FilterFunction.filterCafe(
+      final result =
+          FilterFunction.filterCafe(
         maxDistance: selectedDistance,
         minRating: selectedRating,
       );
@@ -112,7 +163,6 @@ class _HomePageState extends State<HomePage> {
 
     // =====================================================
     // KALAU TIDAK ADA SEARCH DAN FILTER
-    // TAMPILKAN SEMUA CAFE
     // =====================================================
 
     setState(() {
@@ -126,18 +176,18 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   Future<void> _openFilter() async {
-    final result = await showModalBottomSheet<
-        Map<String, double?>?>(
+    final result =
+        await showModalBottomSheet<
+            Map<String, double?>?>(
       context: context,
-
       isScrollControlled: true,
-
       backgroundColor: Colors.transparent,
-
       builder: (_) {
         return FilterSheet(
-          selectedDistance: selectedDistance,
-          selectedRating: selectedRating,
+          selectedDistance:
+              selectedDistance,
+          selectedRating:
+              selectedRating,
         );
       },
     );
@@ -173,15 +223,16 @@ class _HomePageState extends State<HomePage> {
     if (filterAktif) {
       final filtered =
           FilterFunction.filterCafe(
-        maxDistance: selectedDistance,
-        minRating: selectedRating,
+        maxDistance:
+            selectedDistance,
+        minRating:
+            selectedRating,
       );
 
       setState(() {
         searchResults = filtered;
       });
     } else {
-      // Kalau filter di-reset
       setState(() {
         searchResults =
             SearchFunction.searchCafe('');
@@ -194,7 +245,6 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   Future<void> _getUserLocation() async {
-    // Jangan jalankan lagi kalau sedang loading
     if (isLoadingLocation) {
       return;
     }
@@ -203,9 +253,9 @@ class _HomePageState extends State<HomePage> {
       isLoadingLocation = true;
     });
 
-    // Panggil fungsi lokasi
     final String location =
-        await LokasiUserFunction.getLokasiUser();
+        await LokasiUserFunction
+            .getLokasiUser();
 
     if (!mounted) {
       return;
@@ -219,26 +269,44 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    searchController.removeListener(_searchCafe);
+    // =====================================================
+    // HAPUS LISTENER USERNAME
+    // =====================================================
+
+    UserProfile.username.removeListener(
+      _usernameChanged,
+    );
+
+    // =====================================================
+    // HAPUS SEARCH LISTENER
+    // =====================================================
+
+    searchController.removeListener(
+      _searchCafe,
+    );
+
     searchController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isSearching =
-        searchController.text.trim().isNotEmpty;
+        searchController.text
+            .trim()
+            .isNotEmpty;
 
     // =====================================================
-    // FILTER HASIL DITAMPILKAN KALAU
-    // SEARCH KOSONG + FILTER AKTIF
+    // FILTER HASIL
     // =====================================================
 
     final bool showFilterResult =
         !isSearching && isFiltering;
 
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor:
+          AppTheme.background,
 
       // =====================================================
       // BODY
@@ -247,7 +315,8 @@ class _HomePageState extends State<HomePage> {
       body: Background(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
+            padding:
+                const EdgeInsets.fromLTRB(
               20,
               20,
               20,
@@ -272,21 +341,30 @@ class _HomePageState extends State<HomePage> {
 
                         children: [
                           Text(
-                            'Hi, ${widget.username}',
-                            style: const TextStyle(
-                              color: AppTheme.white,
+                            'Hi, $currentUsername',
+
+                            style:
+                                const TextStyle(
+                              color:
+                                  AppTheme.white,
                               fontSize: 24,
-                              fontWeight: FontWeight.bold,
+                              fontWeight:
+                                  FontWeight.bold,
                               letterSpacing: 0.5,
                             ),
                           ),
 
-                          const SizedBox(height: 6),
+                          const SizedBox(
+                            height: 6,
+                          ),
 
                           const Text(
                             'Mau ngopi kemana hari ini?',
-                            style: TextStyle(
-                              color: AppTheme.grey,
+
+                            style:
+                                TextStyle(
+                              color:
+                                  AppTheme.grey,
                               fontSize: 14,
                             ),
                           ),
@@ -299,18 +377,22 @@ class _HomePageState extends State<HomePage> {
                     // =====================================================
 
                     GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        await Navigator.push(
                           context,
-
                           MaterialPageRoute(
                             builder: (_) =>
                                 ProfilePage(
                               username:
-                                  widget.username,
+                                  currentUsername,
                             ),
                           ),
                         );
+
+                        // =====================================================
+                        // USERNAME SUDAH DIHANDLE
+                        // OLEH LISTENER DI ATAS
+                        // =====================================================
                       },
 
                       child: Container(
@@ -319,57 +401,77 @@ class _HomePageState extends State<HomePage> {
 
                         decoration:
                             const BoxDecoration(
-                          color: AppTheme.green,
-                          shape: BoxShape.circle,
+                          color:
+                              AppTheme.green,
+                          shape:
+                              BoxShape.circle,
                         ),
 
                         child: const Icon(
-                          Icons.person_outline,
-                          color: Colors.white,
+                          Icons
+                              .person_outline,
+                          color:
+                              Colors.white,
                         ),
                       ),
                     ),
                   ],
                 ),
 
-                const SizedBox(height: 25),
+                const SizedBox(
+                  height: 25,
+                ),
 
                 // =====================================================
                 // LOCATION
                 // =====================================================
 
                 GestureDetector(
-                  onTap: _getUserLocation,
+                  onTap:
+                      _getUserLocation,
 
                   child: Row(
                     children: [
                       const Icon(
-                        Icons.location_on_outlined,
-                        color: AppTheme.green,
+                        Icons
+                            .location_on_outlined,
+                        color:
+                            AppTheme.green,
                         size: 16,
                       ),
 
-                      const SizedBox(width: 5),
+                      const SizedBox(
+                        width: 5,
+                      ),
 
                       Expanded(
-                        child: isLoadingLocation
-                            ? const Text(
-                                'Mencari lokasi...',
-                                style: TextStyle(
-                                  color: AppTheme.grey,
-                                  fontSize: 12,
-                                ),
-                              )
-                            : Text(
-                                userLocation,
-                                maxLines: 1,
-                                overflow:
-                                    TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: AppTheme.grey,
-                                  fontSize: 12,
-                                ),
-                              ),
+                        child:
+                            isLoadingLocation
+                                ? const Text(
+                                    'Mencari lokasi...',
+                                    style:
+                                        TextStyle(
+                                      color:
+                                          AppTheme.grey,
+                                      fontSize:
+                                          12,
+                                    ),
+                                  )
+                                : Text(
+                                    userLocation,
+                                    maxLines:
+                                        1,
+                                    overflow:
+                                        TextOverflow
+                                            .ellipsis,
+                                    style:
+                                        const TextStyle(
+                                      color:
+                                          AppTheme.grey,
+                                      fontSize:
+                                          12,
+                                    ),
+                                  ),
                       ),
 
                       if (isLoadingLocation)
@@ -379,20 +481,25 @@ class _HomePageState extends State<HomePage> {
                           child:
                               CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: AppTheme.green,
+                            color:
+                                AppTheme
+                                    .green,
                           ),
                         )
                       else
                         const Icon(
                           Icons.refresh,
-                          color: AppTheme.green,
+                          color:
+                              AppTheme.green,
                           size: 16,
                         ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(
+                  height: 18,
+                ),
 
                 // =====================================================
                 // SEARCH
@@ -401,21 +508,32 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   height: 48,
 
-                  decoration: BoxDecoration(
-                    color: AppTheme.card,
+                  decoration:
+                      BoxDecoration(
+                    color:
+                        AppTheme.card,
+
                     borderRadius:
-                        BorderRadius.circular(14),
+                        BorderRadius.circular(
+                      14,
+                    ),
+
                     border: Border.all(
                       color: AppTheme.green
-                          .withValues(alpha: 0.10),
+                          .withValues(
+                        alpha: 0.10,
+                      ),
                     ),
                   ),
 
                   child: TextField(
-                    controller: searchController,
+                    controller:
+                        searchController,
 
-                    style: const TextStyle(
-                      color: AppTheme.white,
+                    style:
+                        const TextStyle(
+                      color:
+                          AppTheme.white,
                     ),
 
                     decoration:
@@ -425,61 +543,60 @@ class _HomePageState extends State<HomePage> {
 
                       hintStyle:
                           const TextStyle(
-                        color: AppTheme.grey,
+                        color:
+                            AppTheme.grey,
                         fontSize: 13,
                       ),
 
                       prefixIcon:
                           const Icon(
                         Icons.search,
-                        color: AppTheme.green,
+                        color:
+                            AppTheme.green,
                         size: 20,
                       ),
 
-                      // =====================================================
-                      // SEARCH / FILTER BUTTON
-                      // =====================================================
-
                       suffixIcon:
-                          searchController.text
+                          searchController
+                                  .text
                                   .isNotEmpty
                               ? IconButton(
-                                  onPressed: () {
+                                  onPressed:
+                                      () {
                                     searchController
                                         .clear();
                                   },
-
                                   icon:
                                       const Icon(
                                     Icons.close,
                                     color:
-                                        AppTheme.grey,
+                                        AppTheme
+                                            .grey,
                                     size: 19,
                                   ),
                                 )
                               : IconButton(
                                   onPressed:
                                       _openFilter,
-
                                   icon:
-                                      Icon(
+                                      const Icon(
                                     Icons.tune,
                                     color:
-                                        isFiltering
-                                            ? AppTheme
-                                                .green
-                                            : AppTheme
-                                                .green,
+                                        AppTheme
+                                            .green,
                                     size: 19,
                                   ),
                                 ),
 
-                      border: InputBorder.none,
+                      border:
+                          InputBorder.none,
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                const SizedBox(
+                  height: 28,
+                ),
 
                 // =====================================================
                 // SEARCH RESULT
@@ -488,19 +605,25 @@ class _HomePageState extends State<HomePage> {
                 if (isSearching) ...[
                   const Text(
                     'Search Result',
-                    style: TextStyle(
-                      color: AppTheme.white,
+                    style:
+                        TextStyle(
+                      color:
+                          AppTheme.white,
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 13),
+                  const SizedBox(
+                    height: 13,
+                  ),
 
                   if (searchResults.isEmpty)
-                    _emptySearch()
+                    emptySearch()
                   else
-                    ...searchResults.map((tokoId) {
+                    ...searchResults
+                        .map((tokoId) {
                       final cafe =
                           cafeData[tokoId]!;
 
@@ -508,11 +631,11 @@ class _HomePageState extends State<HomePage> {
                         onTap: () {
                           Navigator.push(
                             context,
-
                             MaterialPageRoute(
                               builder: (_) =>
                                   CafeDetailPage(
-                                tokoId: tokoId,
+                                tokoId:
+                                    tokoId,
                                 cafeName:
                                     cafe['name']!,
                                 rating:
@@ -529,8 +652,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
                         },
-
-                        child: _trendingCard(
+                        child:
+                            trendingCard(
                           cafe['name']!,
                           cafe['rating']!,
                           cafe['distance']!,
@@ -539,7 +662,9 @@ class _HomePageState extends State<HomePage> {
                       );
                     }),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(
+                    height: 20,
+                  ),
                 ],
 
                 // =====================================================
@@ -549,35 +674,45 @@ class _HomePageState extends State<HomePage> {
                 if (showFilterResult) ...[
                   Row(
                     mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        MainAxisAlignment
+                            .spaceBetween,
 
                     children: [
                       const Text(
                         'Filter Result',
-                        style: TextStyle(
-                          color: AppTheme.white,
+                        style:
+                            TextStyle(
+                          color:
+                              AppTheme.white,
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight:
+                              FontWeight.bold,
                         ),
                       ),
 
                       GestureDetector(
                         onTap: () {
                           setState(() {
-                            selectedDistance = null;
-                            selectedRating = null;
-                            isFiltering = false;
-
+                            selectedDistance =
+                                null;
+                            selectedRating =
+                                null;
+                            isFiltering =
+                                false;
                             searchResults =
                                 SearchFunction
-                                    .searchCafe('');
+                                    .searchCafe(
+                              '',
+                            );
                           });
                         },
-
-                        child: const Text(
+                        child:
+                            const Text(
                           'Reset',
-                          style: TextStyle(
-                            color: AppTheme.green,
+                          style:
+                              TextStyle(
+                            color:
+                                AppTheme.green,
                             fontSize: 12,
                           ),
                         ),
@@ -585,12 +720,15 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
 
-                  const SizedBox(height: 13),
+                  const SizedBox(
+                    height: 13,
+                  ),
 
                   if (searchResults.isEmpty)
-                    _emptySearch()
+                    emptySearch()
                   else
-                    ...searchResults.map((tokoId) {
+                    ...searchResults
+                        .map((tokoId) {
                       final cafe =
                           cafeData[tokoId]!;
 
@@ -598,11 +736,11 @@ class _HomePageState extends State<HomePage> {
                         onTap: () {
                           Navigator.push(
                             context,
-
                             MaterialPageRoute(
                               builder: (_) =>
                                   CafeDetailPage(
-                                tokoId: tokoId,
+                                tokoId:
+                                    tokoId,
                                 cafeName:
                                     cafe['name']!,
                                 rating:
@@ -619,8 +757,8 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
                         },
-
-                        child: _trendingCard(
+                        child:
+                            trendingCard(
                           cafe['name']!,
                           cafe['rating']!,
                           cafe['distance']!,
@@ -629,7 +767,9 @@ class _HomePageState extends State<HomePage> {
                       );
                     }),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(
+                    height: 20,
+                  ),
                 ],
 
                 // =====================================================
@@ -642,33 +782,39 @@ class _HomePageState extends State<HomePage> {
                   // RECOMMENDED
                   // =====================================================
 
-                  _sectionTitle(
+                  sectionTitle(
+                    context,
                     'Recommended',
                     'See all',
                     'recommended',
                   ),
 
-                  const SizedBox(height: 13),
+                  const SizedBox(
+                    height: 13,
+                  ),
 
                   SizedBox(
                     height: 205,
-
-                    child: ListView.builder(
+                    child:
+                        ListView.builder(
                       scrollDirection:
                           Axis.horizontal,
 
                       itemCount:
-                          recommendedCafes.length,
+                          recommendedCafes
+                              .length,
 
                       itemBuilder:
                           (context, index) {
                         final tokoId =
-                            recommendedCafes[index];
+                            recommendedCafes[
+                                index];
 
                         final cafe =
-                            cafeData[tokoId]!;
+                            cafeData[
+                                tokoId]!;
 
-                        return _coffeeCard(
+                        return coffeeCard(
                           context,
                           tokoId,
                           cafe['name']!,
@@ -682,19 +828,24 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
 
-                  const SizedBox(height: 28),
+                  const SizedBox(
+                    height: 28,
+                  ),
 
                   // =====================================================
                   // TRENDING COFFEE
                   // =====================================================
 
-                  _sectionTitle(
+                  sectionTitle(
+                    context,
                     'Trending Coffee',
                     'See all',
                     'trending',
                   ),
 
-                  const SizedBox(height: 10),
+                  const SizedBox(
+                    height: 10,
+                  ),
 
                   ListView.builder(
                     shrinkWrap: true,
@@ -716,11 +867,11 @@ class _HomePageState extends State<HomePage> {
                         onTap: () {
                           Navigator.push(
                             context,
-
                             MaterialPageRoute(
                               builder: (_) =>
                                   CafeDetailPage(
-                                tokoId: tokoId,
+                                tokoId:
+                                    tokoId,
                                 cafeName:
                                     cafe['name']!,
                                 rating:
@@ -738,7 +889,8 @@ class _HomePageState extends State<HomePage> {
                           );
                         },
 
-                        child: _trendingCard(
+                        child:
+                            trendingCard(
                           cafe['name']!,
                           cafe['rating']!,
                           cafe['distance']!,
@@ -759,387 +911,9 @@ class _HomePageState extends State<HomePage> {
       // =====================================================
 
       bottomNavigationBar:
-          Navbar(username: widget.username),
-    );
-  }
-
-  // =====================================================
-  // EMPTY SEARCH
-  // =====================================================
-
-  Widget _emptySearch() {
-    return Padding(
-      padding:
-          const EdgeInsets.symmetric(vertical: 50),
-
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.search_off,
-              color:
-                  AppTheme.grey.withValues(alpha: 0.7),
-              size: 50,
-            ),
-
-            const SizedBox(height: 12),
-
-            const Text(
-              'Cafe tidak ditemukan',
-              style: TextStyle(
-                color: AppTheme.white,
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 5),
-
-            const Text(
-              'Coba gunakan kata kunci lain.',
-              style: TextStyle(
-                color: AppTheme.grey,
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =====================================================
-  // SECTION TITLE
-  // =====================================================
-
-  Widget _sectionTitle(
-    String title,
-    String action,
-    String type,
-  ) {
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
-
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: AppTheme.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-
-              MaterialPageRoute(
-                builder: (_) =>
-                    ListCafePage(type: type),
-              ),
-            );
-          },
-
-          child: Text(
-            action,
-            style: const TextStyle(
-              color: AppTheme.green,
-              fontSize: 12,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // =====================================================
-  // COFFEE CARD
-  // =====================================================
-
-  Widget _coffeeCard(
-    BuildContext context,
-    String tokoId,
-    String name,
-    String distance,
-    String rating,
-    String image,
-    String about,
-    String mapUrl,
-  ) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-
-          MaterialPageRoute(
-            builder: (_) => CafeDetailPage(
-              tokoId: tokoId,
-              cafeName: name,
-              rating: rating,
-              distance: distance,
-              imageUrl: image,
-              about: about,
-              mapUrl: mapUrl,
-            ),
-          ),
-        );
-      },
-
-      child: Container(
-        width: 220,
-
-        margin:
-            const EdgeInsets.only(right: 14),
-
-        decoration: BoxDecoration(
-          color: AppTheme.card,
-          borderRadius:
-              BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.green
-                .withValues(alpha: 0.10),
-          ),
-        ),
-
-        clipBehavior: Clip.antiAlias,
-
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
-          children: [
-            SizedBox(
-              height: 135,
-              width: double.infinity,
-
-              child: Image.asset(
-                image,
-                fit: BoxFit.cover,
-
-                errorBuilder:
-                    (context, error, stackTrace) {
-                  return Container(
-                    color: AppTheme.cardLight,
-
-                    child: const Icon(
-                      Icons.coffee,
-                      color: AppTheme.green,
-                      size: 40,
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            Padding(
-              padding:
-                  const EdgeInsets.all(11),
-
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    name,
-                    style: const TextStyle(
-                      color: AppTheme.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 5),
-
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.star,
-                        color: AppTheme.yellow,
-                        size: 13,
-                      ),
-
-                      const SizedBox(width: 4),
-
-                      Text(
-                        rating,
-                        style:
-                            const TextStyle(
-                          color: AppTheme.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-
-                      const SizedBox(width: 10),
-
-                      const Icon(
-                        Icons.location_on,
-                        color: AppTheme.green,
-                        size: 13,
-                      ),
-
-                      const SizedBox(width: 2),
-
-                      Text(
-                        distance,
-                        style:
-                            const TextStyle(
-                          color: AppTheme.grey,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // =====================================================
-  // TRENDING CARD
-  // =====================================================
-
-  Widget _trendingCard(
-    String name,
-    String rating,
-    String distance,
-    String image,
-  ) {
-    return Container(
-      margin:
-          const EdgeInsets.only(bottom: 10),
-
-      padding:
-          const EdgeInsets.all(8),
-
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-
-        borderRadius:
-            BorderRadius.circular(14),
-
-        border: Border.all(
-          color: AppTheme.green
-              .withValues(alpha: 0.10),
-        ),
-      ),
-
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius:
-                BorderRadius.circular(10),
-
-            child: Image.asset(
-              image,
-              width: 62,
-              height: 62,
-              fit: BoxFit.cover,
-
-              errorBuilder:
-                  (context, error, stackTrace) {
-                return Container(
-                  width: 62,
-                  height: 62,
-
-                  color: AppTheme.cardLight,
-
-                  child: const Icon(
-                    Icons.coffee,
-                    color: AppTheme.green,
-                  ),
-                );
-              },
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
-
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: AppTheme.white,
-                    fontWeight:
-                        FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-
-                const SizedBox(height: 7),
-
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.star,
-                      color: AppTheme.yellow,
-                      size: 12,
-                    ),
-
-                    const SizedBox(width: 3),
-
-                    Text(
-                      rating,
-                      style:
-                          const TextStyle(
-                        color: AppTheme.grey,
-                        fontSize: 11,
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppTheme.green,
-                      size: 12,
-                    ),
-
-                    const SizedBox(width: 3),
-
-                    Text(
-                      distance,
-                      style:
-                          const TextStyle(
-                        color: AppTheme.grey,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          Container(
-            width: 34,
-            height: 34,
-
-            decoration: BoxDecoration(
-              color: AppTheme.green,
-              borderRadius:
-                  BorderRadius.circular(10),
-            ),
-
-            child: const Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white,
-              size: 12,
-            ),
-          ),
-        ],
+          Navbar(
+        username:
+            currentUsername,
       ),
     );
   }
