@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/filter.dart';
 import '../fungsi/lokasi_user.dart';
 import '../fungsi/search.dart';
 import '../models/list_data.dart';
@@ -7,6 +8,7 @@ import '../models/recommended_data.dart';
 import '../models/trending_data.dart';
 import '../theme/app_theme.dart';
 import '../widgets/background.dart';
+import '../widgets/filter_sheet.dart';
 import '../widgets/navbar.dart';
 import 'cafe_detail_page.dart';
 import 'profile_page.dart';
@@ -35,10 +37,19 @@ class _HomePageState extends State<HomePage> {
   List<String> searchResults = [];
 
   // =====================================================
+  // FILTER
+  // =====================================================
+
+  double? selectedDistance;
+  double? selectedRating;
+
+  bool isFiltering = false;
+
+  // =====================================================
   // LOCATION
   // =====================================================
 
-  String userLocation = 'Surabaya, Indonesia';
+  String userLocation = 'Mencari lokasi...';
 
   bool isLoadingLocation = false;
 
@@ -50,6 +61,12 @@ class _HomePageState extends State<HomePage> {
     searchResults = SearchFunction.searchCafe('');
 
     searchController.addListener(_searchCafe);
+
+    // =====================================================
+    // OTOMATIS CARI LOKASI SAAT HOME DIBUKA
+    // =====================================================
+
+    _getUserLocation();
   }
 
   // =====================================================
@@ -57,12 +74,119 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   void _searchCafe() {
-    final result =
-        SearchFunction.searchCafe(searchController.text);
+    final String keyword =
+        searchController.text.trim();
+
+    // =====================================================
+    // KALAU USER SEDANG SEARCH
+    // =====================================================
+
+    if (keyword.isNotEmpty) {
+      final result =
+          SearchFunction.searchCafe(keyword);
+
+      setState(() {
+        searchResults = result;
+      });
+
+      return;
+    }
+
+    // =====================================================
+    // KALAU SEARCH DIKOSONGKAN
+    // KEMBALI KE FILTER JIKA FILTER AKTIF
+    // =====================================================
+
+    if (isFiltering) {
+      final result = FilterFunction.filterCafe(
+        maxDistance: selectedDistance,
+        minRating: selectedRating,
+      );
+
+      setState(() {
+        searchResults = result;
+      });
+
+      return;
+    }
+
+    // =====================================================
+    // KALAU TIDAK ADA SEARCH DAN FILTER
+    // TAMPILKAN SEMUA CAFE
+    // =====================================================
 
     setState(() {
-      searchResults = result;
+      searchResults =
+          SearchFunction.searchCafe('');
     });
+  }
+
+  // =====================================================
+  // BUKA FILTER
+  // =====================================================
+
+  Future<void> _openFilter() async {
+    final result = await showModalBottomSheet<
+        Map<String, double?>?>(
+      context: context,
+
+      isScrollControlled: true,
+
+      backgroundColor: Colors.transparent,
+
+      builder: (_) {
+        return FilterSheet(
+          selectedDistance: selectedDistance,
+          selectedRating: selectedRating,
+        );
+      },
+    );
+
+    // Kalau user menutup filter tanpa Apply
+    if (result == null) {
+      return;
+    }
+
+    final double? distance =
+        result['distance'];
+
+    final double? rating =
+        result['rating'];
+
+    // =====================================================
+    // CEK APAKAH FILTER AKTIF
+    // =====================================================
+
+    final bool filterAktif =
+        distance != null || rating != null;
+
+    setState(() {
+      selectedDistance = distance;
+      selectedRating = rating;
+      isFiltering = filterAktif;
+    });
+
+    // =====================================================
+    // AMBIL HASIL FILTER
+    // =====================================================
+
+    if (filterAktif) {
+      final filtered =
+          FilterFunction.filterCafe(
+        maxDistance: selectedDistance,
+        minRating: selectedRating,
+      );
+
+      setState(() {
+        searchResults = filtered;
+      });
+    } else {
+      // Kalau filter di-reset
+      setState(() {
+        searchResults =
+            SearchFunction.searchCafe('');
+      });
+    }
   }
 
   // =====================================================
@@ -79,11 +203,10 @@ class _HomePageState extends State<HomePage> {
       isLoadingLocation = true;
     });
 
-    // Panggil fungsi lokasi dari lokasi_user.dart
+    // Panggil fungsi lokasi
     final String location =
         await LokasiUserFunction.getLokasiUser();
 
-    // Pastikan halaman masih ada
     if (!mounted) {
       return;
     }
@@ -105,6 +228,14 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final bool isSearching =
         searchController.text.trim().isNotEmpty;
+
+    // =====================================================
+    // FILTER HASIL DITAMPILKAN KALAU
+    // SEARCH KOSONG + FILTER AKTIF
+    // =====================================================
+
+    final bool showFilterResult =
+        !isSearching && isFiltering;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -142,7 +273,6 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           Text(
                             'Hi, ${widget.username}',
-
                             style: const TextStyle(
                               color: AppTheme.white,
                               fontSize: 24,
@@ -155,7 +285,6 @@ class _HomePageState extends State<HomePage> {
 
                           const Text(
                             'Mau ngopi kemana hari ini?',
-
                             style: TextStyle(
                               color: AppTheme.grey,
                               fontSize: 14,
@@ -177,7 +306,8 @@ class _HomePageState extends State<HomePage> {
                           MaterialPageRoute(
                             builder: (_) =>
                                 ProfilePage(
-                              username: widget.username,
+                              username:
+                                  widget.username,
                             ),
                           ),
                         );
@@ -232,11 +362,9 @@ class _HomePageState extends State<HomePage> {
                               )
                             : Text(
                                 userLocation,
-
                                 maxLines: 1,
                                 overflow:
                                     TextOverflow.ellipsis,
-
                                 style: const TextStyle(
                                   color: AppTheme.grey,
                                   fontSize: 12,
@@ -244,15 +372,10 @@ class _HomePageState extends State<HomePage> {
                               ),
                       ),
 
-                      // =====================================================
-                      // REFRESH LOCATION
-                      // =====================================================
-
                       if (isLoadingLocation)
                         const SizedBox(
                           width: 14,
                           height: 14,
-
                           child:
                               CircularProgressIndicator(
                             strokeWidth: 2,
@@ -280,10 +403,8 @@ class _HomePageState extends State<HomePage> {
 
                   decoration: BoxDecoration(
                     color: AppTheme.card,
-
                     borderRadius:
                         BorderRadius.circular(14),
-
                     border: Border.all(
                       color: AppTheme.green
                           .withValues(alpha: 0.10),
@@ -315,6 +436,10 @@ class _HomePageState extends State<HomePage> {
                         size: 20,
                       ),
 
+                      // =====================================================
+                      // SEARCH / FILTER BUTTON
+                      // =====================================================
+
                       suffixIcon:
                           searchController.text
                                   .isNotEmpty
@@ -332,11 +457,21 @@ class _HomePageState extends State<HomePage> {
                                     size: 19,
                                   ),
                                 )
-                              : const Icon(
-                                  Icons.tune,
-                                  color:
-                                      AppTheme.green,
-                                  size: 19,
+                              : IconButton(
+                                  onPressed:
+                                      _openFilter,
+
+                                  icon:
+                                      Icon(
+                                    Icons.tune,
+                                    color:
+                                        isFiltering
+                                            ? AppTheme
+                                                .green
+                                            : AppTheme
+                                                .green,
+                                    size: 19,
+                                  ),
                                 ),
 
                       border: InputBorder.none,
@@ -353,7 +488,6 @@ class _HomePageState extends State<HomePage> {
                 if (isSearching) ...[
                   const Text(
                     'Search Result',
-
                     style: TextStyle(
                       color: AppTheme.white,
                       fontSize: 16,
@@ -409,10 +543,101 @@ class _HomePageState extends State<HomePage> {
                 ],
 
                 // =====================================================
+                // FILTER RESULT
+                // =====================================================
+
+                if (showFilterResult) ...[
+                  Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+
+                    children: [
+                      const Text(
+                        'Filter Result',
+                        style: TextStyle(
+                          color: AppTheme.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedDistance = null;
+                            selectedRating = null;
+                            isFiltering = false;
+
+                            searchResults =
+                                SearchFunction
+                                    .searchCafe('');
+                          });
+                        },
+
+                        child: const Text(
+                          'Reset',
+                          style: TextStyle(
+                            color: AppTheme.green,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 13),
+
+                  if (searchResults.isEmpty)
+                    _emptySearch()
+                  else
+                    ...searchResults.map((tokoId) {
+                      final cafe =
+                          cafeData[tokoId]!;
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CafeDetailPage(
+                                tokoId: tokoId,
+                                cafeName:
+                                    cafe['name']!,
+                                rating:
+                                    cafe['rating']!,
+                                distance:
+                                    cafe['distance']!,
+                                imageUrl:
+                                    cafe['image']!,
+                                about:
+                                    cafe['about']!,
+                                mapUrl:
+                                    cafe['mapUrl']!,
+                              ),
+                            ),
+                          );
+                        },
+
+                        child: _trendingCard(
+                          cafe['name']!,
+                          cafe['rating']!,
+                          cafe['distance']!,
+                          cafe['image']!,
+                        ),
+                      );
+                    }),
+
+                  const SizedBox(height: 20),
+                ],
+
+                // =====================================================
                 // NORMAL HOME CONTENT
                 // =====================================================
 
-                if (!isSearching) ...[
+                if (!isSearching &&
+                    !isFiltering) ...[
                   // =====================================================
                   // RECOMMENDED
                   // =====================================================
@@ -473,7 +698,6 @@ class _HomePageState extends State<HomePage> {
 
                   ListView.builder(
                     shrinkWrap: true,
-
                     physics:
                         const NeverScrollableScrollPhysics(),
 
@@ -553,10 +777,8 @@ class _HomePageState extends State<HomePage> {
           children: [
             Icon(
               Icons.search_off,
-
               color:
                   AppTheme.grey.withValues(alpha: 0.7),
-
               size: 50,
             ),
 
@@ -564,7 +786,6 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Cafe tidak ditemukan',
-
               style: TextStyle(
                 color: AppTheme.white,
                 fontSize: 15,
@@ -576,7 +797,6 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Coba gunakan kata kunci lain.',
-
               style: TextStyle(
                 color: AppTheme.grey,
                 fontSize: 12,
@@ -604,17 +824,12 @@ class _HomePageState extends State<HomePage> {
       children: [
         Text(
           title,
-
           style: const TextStyle(
             color: AppTheme.white,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
-
-        // =====================================================
-        // SEE ALL
-        // =====================================================
 
         GestureDetector(
           onTap: () {
@@ -630,7 +845,6 @@ class _HomePageState extends State<HomePage> {
 
           child: Text(
             action,
-
             style: const TextStyle(
               color: AppTheme.green,
               fontSize: 12,
@@ -682,10 +896,8 @@ class _HomePageState extends State<HomePage> {
 
         decoration: BoxDecoration(
           color: AppTheme.card,
-
           borderRadius:
               BorderRadius.circular(16),
-
           border: Border.all(
             color: AppTheme.green
                 .withValues(alpha: 0.10),
@@ -699,17 +911,12 @@ class _HomePageState extends State<HomePage> {
               CrossAxisAlignment.start,
 
           children: [
-            // =====================================================
-            // FOTO
-            // =====================================================
-
             SizedBox(
               height: 135,
               width: double.infinity,
 
               child: Image.asset(
                 image,
-
                 fit: BoxFit.cover,
 
                 errorBuilder:
@@ -727,10 +934,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // =====================================================
-            // INFORMASI
-            // =====================================================
-
             Padding(
               padding:
                   const EdgeInsets.all(11),
@@ -742,7 +945,6 @@ class _HomePageState extends State<HomePage> {
                 children: [
                   Text(
                     name,
-
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
@@ -764,7 +966,6 @@ class _HomePageState extends State<HomePage> {
 
                       Text(
                         rating,
-
                         style:
                             const TextStyle(
                           color: AppTheme.grey,
@@ -784,7 +985,6 @@ class _HomePageState extends State<HomePage> {
 
                       Text(
                         distance,
-
                         style:
                             const TextStyle(
                           color: AppTheme.grey,
@@ -833,20 +1033,14 @@ class _HomePageState extends State<HomePage> {
 
       child: Row(
         children: [
-          // =====================================================
-          // FOTO
-          // =====================================================
-
           ClipRRect(
             borderRadius:
                 BorderRadius.circular(10),
 
             child: Image.asset(
               image,
-
               width: 62,
               height: 62,
-
               fit: BoxFit.cover,
 
               errorBuilder:
@@ -868,10 +1062,6 @@ class _HomePageState extends State<HomePage> {
 
           const SizedBox(width: 12),
 
-          // =====================================================
-          // INFORMASI
-          // =====================================================
-
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -880,7 +1070,6 @@ class _HomePageState extends State<HomePage> {
               children: [
                 Text(
                   name,
-
                   style: const TextStyle(
                     color: AppTheme.white,
                     fontWeight:
@@ -903,7 +1092,6 @@ class _HomePageState extends State<HomePage> {
 
                     Text(
                       rating,
-
                       style:
                           const TextStyle(
                         color: AppTheme.grey,
@@ -923,7 +1111,6 @@ class _HomePageState extends State<HomePage> {
 
                     Text(
                       distance,
-
                       style:
                           const TextStyle(
                         color: AppTheme.grey,
@@ -936,17 +1123,12 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // =====================================================
-          // ARROW
-          // =====================================================
-
           Container(
             width: 34,
             height: 34,
 
             decoration: BoxDecoration(
               color: AppTheme.green,
-
               borderRadius:
                   BorderRadius.circular(10),
             ),

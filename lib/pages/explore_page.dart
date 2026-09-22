@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/filter.dart';
 import '../fungsi/search.dart';
 import '../models/list_data.dart';
 import '../theme/app_theme.dart';
+import '../widgets/filter_sheet.dart';
 import 'cafe_detail_page.dart';
 
 class ExplorePage extends StatefulWidget {
@@ -22,6 +24,15 @@ class _ExplorePageState extends State<ExplorePage> {
 
   List<String> cafes = [];
 
+  // =====================================================
+  // FILTER
+  // =====================================================
+
+  double? selectedDistance;
+  double? selectedRating;
+
+  bool isFiltering = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,13 +48,113 @@ class _ExplorePageState extends State<ExplorePage> {
   // =====================================================
 
   void _searchCafe() {
-    final result = SearchFunction.searchCafe(
-      searchController.text,
-    );
+    final String keyword =
+        searchController.text.trim();
+
+    // =====================================================
+    // KALAU ADA SEARCH
+    // =====================================================
+
+    if (keyword.isNotEmpty) {
+      final result =
+          SearchFunction.searchCafe(keyword);
+
+      setState(() {
+        cafes = result;
+      });
+
+      return;
+    }
+
+    // =====================================================
+    // KALAU SEARCH DIKOSONGKAN DAN FILTER AKTIF
+    // =====================================================
+
+    if (isFiltering) {
+      final result =
+          FilterFunction.filterCafe(
+        maxDistance: selectedDistance,
+        minRating: selectedRating,
+      );
+
+      setState(() {
+        cafes = result;
+      });
+
+      return;
+    }
+
+    // =====================================================
+    // KALAU TIDAK ADA SEARCH DAN FILTER
+    // =====================================================
 
     setState(() {
-      cafes = result;
+      cafes = SearchFunction.searchCafe('');
     });
+  }
+
+  // =====================================================
+  // BUKA FILTER
+  // =====================================================
+
+  Future<void> _openFilter() async {
+    final result = await showModalBottomSheet<
+        Map<String, double?>?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return FilterSheet(
+          selectedDistance: selectedDistance,
+          selectedRating: selectedRating,
+        );
+      },
+    );
+
+    // Kalau ditutup tanpa Apply
+    if (result == null) {
+      return;
+    }
+
+    final double? distance =
+        result['distance'];
+
+    final double? rating =
+        result['rating'];
+
+    // =====================================================
+    // CEK FILTER
+    // =====================================================
+
+    final bool filterAktif =
+        distance != null || rating != null;
+
+    setState(() {
+      selectedDistance = distance;
+      selectedRating = rating;
+      isFiltering = filterAktif;
+    });
+
+    // =====================================================
+    // TERAPKAN FILTER
+    // =====================================================
+
+    if (filterAktif) {
+      final filtered =
+          FilterFunction.filterCafe(
+        maxDistance: selectedDistance,
+        minRating: selectedRating,
+      );
+
+      setState(() {
+        cafes = filtered;
+      });
+    } else {
+      // Kalau filter di-reset
+      setState(() {
+        cafes = SearchFunction.searchCafe('');
+      });
+    }
   }
 
   @override
@@ -66,6 +177,7 @@ class _ExplorePageState extends State<ExplorePage> {
         backgroundColor: AppTheme.background,
         elevation: 0,
         centerTitle: false,
+
         title: const Text(
           'Explore',
           style: TextStyle(
@@ -74,15 +186,6 @@ class _ExplorePageState extends State<ExplorePage> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(
-              Icons.tune,
-              color: AppTheme.green,
-            ),
-          ),
-        ],
       ),
 
       // =====================================================
@@ -105,20 +208,29 @@ class _ExplorePageState extends State<ExplorePage> {
               ),
               child: Container(
                 height: 48,
+
                 decoration: BoxDecoration(
                   color: AppTheme.card,
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius:
+                      BorderRadius.circular(14),
+
                   border: Border.all(
-                    color: AppTheme.green.withValues(alpha: 0.10),
+                    color: AppTheme.green
+                        .withValues(alpha: 0.10),
                   ),
                 ),
+
                 child: TextField(
                   controller: searchController,
+
                   style: const TextStyle(
                     color: AppTheme.white,
                   ),
+
                   decoration: InputDecoration(
-                    hintText: 'Search coffee shop...',
+                    hintText:
+                        'Search coffee shop...',
+
                     hintStyle: const TextStyle(
                       color: AppTheme.grey,
                       fontSize: 13,
@@ -130,19 +242,38 @@ class _ExplorePageState extends State<ExplorePage> {
                       size: 20,
                     ),
 
+                    // =====================================================
+                    // FILTER / CLEAR BUTTON
+                    // =====================================================
+
                     suffixIcon:
                         searchController.text.isNotEmpty
                             ? IconButton(
+                                // Kalau sedang search,
+                                // tombol berubah menjadi tombol clear
                                 onPressed: () {
                                   searchController.clear();
                                 },
+
                                 icon: const Icon(
                                   Icons.close,
-                                  color: AppTheme.grey,
+                                  color:
+                                      AppTheme.grey,
                                   size: 19,
                                 ),
                               )
-                            : null,
+                            : IconButton(
+                                // Kalau search kosong,
+                                // tombol ini membuka FilterSheet
+                                onPressed: _openFilter,
+
+                                icon: const Icon(
+                                  Icons.tune,
+                                  color:
+                                      AppTheme.green,
+                                  size: 19,
+                                ),
+                              ),
 
                     border: InputBorder.none,
                   ),
@@ -151,23 +282,95 @@ class _ExplorePageState extends State<ExplorePage> {
             ),
 
             // =====================================================
-            // HASIL PENCARIAN
+            // FILTER STATUS
+            // =====================================================
+
+            if (isFiltering)
+              Padding(
+                padding:
+                    const EdgeInsets.fromLTRB(
+                  20,
+                  0,
+                  20,
+                  10,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.filter_alt_outlined,
+                      color: AppTheme.green,
+                      size: 15,
+                    ),
+
+                    const SizedBox(width: 5),
+
+                    const Text(
+                      'Filter aktif',
+                      style: TextStyle(
+                        color: AppTheme.green,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    // =====================================================
+                    // RESET FILTER
+                    // =====================================================
+
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedDistance = null;
+                          selectedRating = null;
+                          isFiltering = false;
+
+                          cafes =
+                              SearchFunction
+                                  .searchCafe(
+                            searchController.text,
+                          );
+                        });
+                      },
+
+                      child: const Text(
+                        'Reset',
+                        style: TextStyle(
+                          color: AppTheme.green,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // =====================================================
+            // HASIL
             // =====================================================
 
             Expanded(
               child: cafes.isEmpty
                   ? _emptySearch()
                   : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
+                      padding:
+                          const EdgeInsets.fromLTRB(
                         20,
                         0,
                         20,
                         20,
                       ),
+
                       itemCount: cafes.length,
-                      itemBuilder: (context, index) {
-                        final tokoId = cafes[index];
-                        final cafe = cafeData[tokoId]!;
+
+                      itemBuilder:
+                          (context, index) {
+                        final tokoId =
+                            cafes[index];
+
+                        final cafe =
+                            cafeData[tokoId]!;
 
                         return _cafeItem(
                           context,
@@ -206,6 +409,7 @@ class _ExplorePageState extends State<ExplorePage> {
       onTap: () {
         Navigator.push(
           context,
+
           MaterialPageRoute(
             builder: (_) => CafeDetailPage(
               tokoId: tokoId,
@@ -219,16 +423,26 @@ class _ExplorePageState extends State<ExplorePage> {
           ),
         );
       },
+
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(8),
+        margin:
+            const EdgeInsets.only(bottom: 12),
+
+        padding:
+            const EdgeInsets.all(8),
+
         decoration: BoxDecoration(
           color: AppTheme.card,
-          borderRadius: BorderRadius.circular(14),
+
+          borderRadius:
+              BorderRadius.circular(14),
+
           border: Border.all(
-            color: AppTheme.green.withValues(alpha: 0.10),
+            color: AppTheme.green
+                .withValues(alpha: 0.10),
           ),
         ),
+
         child: Row(
           children: [
             // =====================================================
@@ -236,12 +450,17 @@ class _ExplorePageState extends State<ExplorePage> {
             // =====================================================
 
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius:
+                  BorderRadius.circular(10),
+
               child: Image.asset(
                 image,
+
                 width: 75,
                 height: 75,
+
                 fit: BoxFit.cover,
+
                 errorBuilder: (
                   context,
                   error,
@@ -250,10 +469,14 @@ class _ExplorePageState extends State<ExplorePage> {
                   return Container(
                     width: 75,
                     height: 75,
-                    color: AppTheme.cardLight,
+
+                    color:
+                        AppTheme.cardLight,
+
                     child: const Icon(
                       Icons.coffee,
-                      color: AppTheme.green,
+                      color:
+                          AppTheme.green,
                     ),
                   );
                 },
@@ -270,12 +493,15 @@ class _ExplorePageState extends State<ExplorePage> {
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     name,
+
                     style: const TextStyle(
                       color: AppTheme.white,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
@@ -286,7 +512,8 @@ class _ExplorePageState extends State<ExplorePage> {
                     children: [
                       const Icon(
                         Icons.star,
-                        color: AppTheme.yellow,
+                        color:
+                            AppTheme.yellow,
                         size: 13,
                       ),
 
@@ -294,7 +521,9 @@ class _ExplorePageState extends State<ExplorePage> {
 
                       Text(
                         rating,
-                        style: const TextStyle(
+
+                        style:
+                            const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
                         ),
@@ -303,8 +532,10 @@ class _ExplorePageState extends State<ExplorePage> {
                       const SizedBox(width: 12),
 
                       const Icon(
-                        Icons.location_on_outlined,
-                        color: AppTheme.green,
+                        Icons
+                            .location_on_outlined,
+                        color:
+                            AppTheme.green,
                         size: 13,
                       ),
 
@@ -312,7 +543,9 @@ class _ExplorePageState extends State<ExplorePage> {
 
                       Text(
                         distance,
-                        style: const TextStyle(
+
+                        style:
+                            const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
                         ),
@@ -324,9 +557,14 @@ class _ExplorePageState extends State<ExplorePage> {
 
                   Text(
                     about,
+
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+
+                    overflow:
+                        TextOverflow.ellipsis,
+
+                    style:
+                        const TextStyle(
                       color: AppTheme.grey,
                       fontSize: 10,
                     ),
@@ -344,10 +582,14 @@ class _ExplorePageState extends State<ExplorePage> {
             Container(
               width: 34,
               height: 34,
+
               decoration: BoxDecoration(
                 color: AppTheme.green,
-                borderRadius: BorderRadius.circular(10),
+
+                borderRadius:
+                    BorderRadius.circular(10),
               ),
+
               child: const Icon(
                 Icons.arrow_forward_ios,
                 color: Colors.white,
@@ -367,11 +609,16 @@ class _ExplorePageState extends State<ExplorePage> {
   Widget _emptySearch() {
     return Center(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment:
+            MainAxisAlignment.center,
+
         children: [
           Icon(
             Icons.search_off,
-            color: AppTheme.grey.withValues(alpha: 0.7),
+
+            color: AppTheme.grey
+                .withValues(alpha: 0.7),
+
             size: 50,
           ),
 
@@ -379,10 +626,12 @@ class _ExplorePageState extends State<ExplorePage> {
 
           const Text(
             'Cafe tidak ditemukan',
+
             style: TextStyle(
               color: AppTheme.white,
               fontSize: 15,
-              fontWeight: FontWeight.w600,
+              fontWeight:
+                  FontWeight.w600,
             ),
           ),
 
@@ -390,6 +639,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
           const Text(
             'Coba gunakan kata kunci lain.',
+
             style: TextStyle(
               color: AppTheme.grey,
               fontSize: 12,

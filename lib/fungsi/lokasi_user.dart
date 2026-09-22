@@ -51,7 +51,8 @@ class LokasiUserFunction {
       final Position position =
           await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.medium,
+          // LOW cukup karena kita hanya membutuhkan nama kota
+          accuracy: LocationAccuracy.low,
         ),
       );
 
