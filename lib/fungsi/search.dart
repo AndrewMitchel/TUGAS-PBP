@@ -13,15 +13,18 @@ class SearchFunction {
       return cafeData.keys.toList();
     }
 
-    // Cari berdasarkan nama atau about
+    // =====================================================
+    // CARI BERDASARKAN NAMA CAFE SAJA
+    // =====================================================
+
     return cafeData.keys.where((tokoId) {
       final cafe = cafeData[tokoId]!;
 
+      // Ambil nama cafe
       final name = cafe['name']!.toLowerCase();
-      final about = cafe['about']!.toLowerCase();
 
-      return name.contains(keyword) ||
-          about.contains(keyword);
+      // Cek apakah nama cafe mengandung keyword
+      return name.contains(keyword);
     }).toList();
   }
 }

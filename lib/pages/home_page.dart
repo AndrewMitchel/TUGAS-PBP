@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/lokasi_user.dart';
 import '../fungsi/search.dart';
 import '../models/list_data.dart';
 import '../models/recommended_data.dart';
@@ -14,7 +15,10 @@ import 'list_cafe.dart';
 class HomePage extends StatefulWidget {
   final String username;
 
-  const HomePage({super.key, required this.username});
+  const HomePage({
+    super.key,
+    required this.username,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,9 +29,18 @@ class _HomePageState extends State<HomePage> {
   // SEARCH CONTROLLER
   // =====================================================
 
-  final TextEditingController searchController = TextEditingController();
+  final TextEditingController searchController =
+      TextEditingController();
 
   List<String> searchResults = [];
+
+  // =====================================================
+  // LOCATION
+  // =====================================================
+
+  String userLocation = 'Surabaya, Indonesia';
+
+  bool isLoadingLocation = false;
 
   @override
   void initState() {
@@ -44,10 +57,40 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   void _searchCafe() {
-    final result = SearchFunction.searchCafe(searchController.text);
+    final result =
+        SearchFunction.searchCafe(searchController.text);
 
     setState(() {
       searchResults = result;
+    });
+  }
+
+  // =====================================================
+  // GET USER LOCATION
+  // =====================================================
+
+  Future<void> _getUserLocation() async {
+    // Jangan jalankan lagi kalau sedang loading
+    if (isLoadingLocation) {
+      return;
+    }
+
+    setState(() {
+      isLoadingLocation = true;
+    });
+
+    // Panggil fungsi lokasi dari lokasi_user.dart
+    final String location =
+        await LokasiUserFunction.getLokasiUser();
+
+    // Pastikan halaman masih ada
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      userLocation = location;
+      isLoadingLocation = false;
     });
   }
 
@@ -60,7 +103,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSearching = searchController.text.trim().isNotEmpty;
+    final bool isSearching =
+        searchController.text.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -68,13 +112,20 @@ class _HomePageState extends State<HomePage> {
       // =====================================================
       // BODY
       // =====================================================
+
       body: Background(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              100,
+            ),
 
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
 
               children: [
                 // =====================================================
@@ -85,11 +136,13 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment:
+                            CrossAxisAlignment.start,
 
                         children: [
                           Text(
                             'Hi, ${widget.username}',
+
                             style: const TextStyle(
                               color: AppTheme.white,
                               fontSize: 24,
@@ -102,6 +155,7 @@ class _HomePageState extends State<HomePage> {
 
                           const Text(
                             'Mau ngopi kemana hari ini?',
+
                             style: TextStyle(
                               color: AppTheme.grey,
                               fontSize: 14,
@@ -114,13 +168,17 @@ class _HomePageState extends State<HomePage> {
                     // =====================================================
                     // PROFILE
                     // =====================================================
+
                     GestureDetector(
                       onTap: () {
                         Navigator.push(
                           context,
+
                           MaterialPageRoute(
                             builder: (_) =>
-                                ProfilePage(username: widget.username),
+                                ProfilePage(
+                              username: widget.username,
+                            ),
                           ),
                         );
                       },
@@ -129,7 +187,8 @@ class _HomePageState extends State<HomePage> {
                         width: 42,
                         height: 42,
 
-                        decoration: const BoxDecoration(
+                        decoration:
+                            const BoxDecoration(
                           color: AppTheme.green,
                           shape: BoxShape.circle,
                         ),
@@ -148,21 +207,66 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // LOCATION
                 // =====================================================
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: AppTheme.green,
-                      size: 16,
-                    ),
 
-                    const SizedBox(width: 5),
+                GestureDetector(
+                  onTap: _getUserLocation,
 
-                    const Text(
-                      'Surabaya, Indonesia',
-                      style: TextStyle(color: AppTheme.grey, fontSize: 12),
-                    ),
-                  ],
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: AppTheme.green,
+                        size: 16,
+                      ),
+
+                      const SizedBox(width: 5),
+
+                      Expanded(
+                        child: isLoadingLocation
+                            ? const Text(
+                                'Mencari lokasi...',
+                                style: TextStyle(
+                                  color: AppTheme.grey,
+                                  fontSize: 12,
+                                ),
+                              )
+                            : Text(
+                                userLocation,
+
+                                maxLines: 1,
+                                overflow:
+                                    TextOverflow.ellipsis,
+
+                                style: const TextStyle(
+                                  color: AppTheme.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                      ),
+
+                      // =====================================================
+                      // REFRESH LOCATION
+                      // =====================================================
+
+                      if (isLoadingLocation)
+                        const SizedBox(
+                          width: 14,
+                          height: 14,
+
+                          child:
+                              CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.green,
+                          ),
+                        )
+                      else
+                        const Icon(
+                          Icons.refresh,
+                          color: AppTheme.green,
+                          size: 16,
+                        ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 18),
@@ -170,54 +274,70 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // SEARCH
                 // =====================================================
+
                 Container(
                   height: 48,
 
                   decoration: BoxDecoration(
                     color: AppTheme.card,
-                    borderRadius: BorderRadius.circular(14),
+
+                    borderRadius:
+                        BorderRadius.circular(14),
 
                     border: Border.all(
-                      color: AppTheme.green.withValues(alpha: 0.10),
+                      color: AppTheme.green
+                          .withValues(alpha: 0.10),
                     ),
                   ),
 
                   child: TextField(
                     controller: searchController,
 
-                    style: const TextStyle(color: AppTheme.white),
+                    style: const TextStyle(
+                      color: AppTheme.white,
+                    ),
 
-                    decoration: InputDecoration(
-                      hintText: 'Search coffee shop...',
+                    decoration:
+                        InputDecoration(
+                      hintText:
+                          'Search coffee shop...',
 
-                      hintStyle: const TextStyle(
+                      hintStyle:
+                          const TextStyle(
                         color: AppTheme.grey,
                         fontSize: 13,
                       ),
 
-                      prefixIcon: const Icon(
+                      prefixIcon:
+                          const Icon(
                         Icons.search,
                         color: AppTheme.green,
                         size: 20,
                       ),
 
-                      suffixIcon: searchController.text.isNotEmpty
-                          ? IconButton(
-                              onPressed: () {
-                                searchController.clear();
-                              },
+                      suffixIcon:
+                          searchController.text
+                                  .isNotEmpty
+                              ? IconButton(
+                                  onPressed: () {
+                                    searchController
+                                        .clear();
+                                  },
 
-                              icon: const Icon(
-                                Icons.close,
-                                color: AppTheme.grey,
-                                size: 19,
-                              ),
-                            )
-                          : const Icon(
-                              Icons.tune,
-                              color: AppTheme.green,
-                              size: 19,
-                            ),
+                                  icon:
+                                      const Icon(
+                                    Icons.close,
+                                    color:
+                                        AppTheme.grey,
+                                    size: 19,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.tune,
+                                  color:
+                                      AppTheme.green,
+                                  size: 19,
+                                ),
 
                       border: InputBorder.none,
                     ),
@@ -229,9 +349,11 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // SEARCH RESULT
                 // =====================================================
+
                 if (isSearching) ...[
                   const Text(
                     'Search Result',
+
                     style: TextStyle(
                       color: AppTheme.white,
                       fontSize: 16,
@@ -245,21 +367,30 @@ class _HomePageState extends State<HomePage> {
                     _emptySearch()
                   else
                     ...searchResults.map((tokoId) {
-                      final cafe = cafeData[tokoId]!;
+                      final cafe =
+                          cafeData[tokoId]!;
 
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
+
                             MaterialPageRoute(
-                              builder: (_) => CafeDetailPage(
+                              builder: (_) =>
+                                  CafeDetailPage(
                                 tokoId: tokoId,
-                                cafeName: cafe['name']!,
-                                rating: cafe['rating']!,
-                                distance: cafe['distance']!,
-                                imageUrl: cafe['image']!,
-                                about: cafe['about']!,
-                                mapUrl: cafe['mapUrl']!,
+                                cafeName:
+                                    cafe['name']!,
+                                rating:
+                                    cafe['rating']!,
+                                distance:
+                                    cafe['distance']!,
+                                imageUrl:
+                                    cafe['image']!,
+                                about:
+                                    cafe['about']!,
+                                mapUrl:
+                                    cafe['mapUrl']!,
                               ),
                             ),
                           );
@@ -280,12 +411,17 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // NORMAL HOME CONTENT
                 // =====================================================
+
                 if (!isSearching) ...[
                   // =====================================================
                   // RECOMMENDED
                   // =====================================================
 
-                  _sectionTitle('Recommended', 'See all', 'recommended'),
+                  _sectionTitle(
+                    'Recommended',
+                    'See all',
+                    'recommended',
+                  ),
 
                   const SizedBox(height: 13),
 
@@ -293,14 +429,19 @@ class _HomePageState extends State<HomePage> {
                     height: 205,
 
                     child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
+                      scrollDirection:
+                          Axis.horizontal,
 
-                      itemCount: recommendedCafes.length,
+                      itemCount:
+                          recommendedCafes.length,
 
-                      itemBuilder: (context, index) {
-                        final tokoId = recommendedCafes[index];
+                      itemBuilder:
+                          (context, index) {
+                        final tokoId =
+                            recommendedCafes[index];
 
-                        final cafe = cafeData[tokoId]!;
+                        final cafe =
+                            cafeData[tokoId]!;
 
                         return _coffeeCard(
                           context,
@@ -321,35 +462,53 @@ class _HomePageState extends State<HomePage> {
                   // =====================================================
                   // TRENDING COFFEE
                   // =====================================================
-                  _sectionTitle('Trending Coffee', 'See all', 'trending'),
+
+                  _sectionTitle(
+                    'Trending Coffee',
+                    'See all',
+                    'trending',
+                  ),
 
                   const SizedBox(height: 10),
 
                   ListView.builder(
                     shrinkWrap: true,
 
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics:
+                        const NeverScrollableScrollPhysics(),
 
-                    itemCount: trendingCafes.length,
+                    itemCount:
+                        trendingCafes.length,
 
-                    itemBuilder: (context, index) {
-                      final tokoId = trendingCafes[index];
+                    itemBuilder:
+                        (context, index) {
+                      final tokoId =
+                          trendingCafes[index];
 
-                      final cafe = cafeData[tokoId]!;
+                      final cafe =
+                          cafeData[tokoId]!;
 
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
+
                             MaterialPageRoute(
-                              builder: (_) => CafeDetailPage(
+                              builder: (_) =>
+                                  CafeDetailPage(
                                 tokoId: tokoId,
-                                cafeName: cafe['name']!,
-                                rating: cafe['rating']!,
-                                distance: cafe['distance']!,
-                                imageUrl: cafe['image']!,
-                                about: cafe['about']!,
-                                mapUrl: cafe['mapUrl']!,
+                                cafeName:
+                                    cafe['name']!,
+                                rating:
+                                    cafe['rating']!,
+                                distance:
+                                    cafe['distance']!,
+                                imageUrl:
+                                    cafe['image']!,
+                                about:
+                                    cafe['about']!,
+                                mapUrl:
+                                    cafe['mapUrl']!,
                               ),
                             ),
                           );
@@ -374,7 +533,9 @@ class _HomePageState extends State<HomePage> {
       // =====================================================
       // BOTTOM NAVIGATION
       // =====================================================
-      bottomNavigationBar: Navbar(username: widget.username),
+
+      bottomNavigationBar:
+          Navbar(username: widget.username),
     );
   }
 
@@ -384,14 +545,18 @@ class _HomePageState extends State<HomePage> {
 
   Widget _emptySearch() {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 50),
+      padding:
+          const EdgeInsets.symmetric(vertical: 50),
 
       child: Center(
         child: Column(
           children: [
             Icon(
               Icons.search_off,
-              color: AppTheme.grey.withValues(alpha: 0.7),
+
+              color:
+                  AppTheme.grey.withValues(alpha: 0.7),
+
               size: 50,
             ),
 
@@ -399,6 +564,7 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Cafe tidak ditemukan',
+
               style: TextStyle(
                 color: AppTheme.white,
                 fontSize: 15,
@@ -410,7 +576,11 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Coba gunakan kata kunci lain.',
-              style: TextStyle(color: AppTheme.grey, fontSize: 12),
+
+              style: TextStyle(
+                color: AppTheme.grey,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -422,13 +592,19 @@ class _HomePageState extends State<HomePage> {
   // SECTION TITLE
   // =====================================================
 
-  Widget _sectionTitle(String title, String action, String type) {
+  Widget _sectionTitle(
+    String title,
+    String action,
+    String type,
+  ) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment:
+          MainAxisAlignment.spaceBetween,
 
       children: [
         Text(
           title,
+
           style: const TextStyle(
             color: AppTheme.white,
             fontSize: 16,
@@ -439,18 +615,26 @@ class _HomePageState extends State<HomePage> {
         // =====================================================
         // SEE ALL
         // =====================================================
+
         GestureDetector(
           onTap: () {
             Navigator.push(
               context,
 
-              MaterialPageRoute(builder: (_) => ListCafePage(type: type)),
+              MaterialPageRoute(
+                builder: (_) =>
+                    ListCafePage(type: type),
+              ),
             );
           },
 
           child: Text(
             action,
-            style: const TextStyle(color: AppTheme.green, fontSize: 12),
+
+            style: const TextStyle(
+              color: AppTheme.green,
+              fontSize: 12,
+            ),
           ),
         ),
       ],
@@ -475,6 +659,7 @@ class _HomePageState extends State<HomePage> {
       onTap: () {
         Navigator.push(
           context,
+
           MaterialPageRoute(
             builder: (_) => CafeDetailPage(
               tokoId: tokoId,
@@ -492,20 +677,26 @@ class _HomePageState extends State<HomePage> {
       child: Container(
         width: 220,
 
-        margin: const EdgeInsets.only(right: 14),
+        margin:
+            const EdgeInsets.only(right: 14),
 
         decoration: BoxDecoration(
           color: AppTheme.card,
 
-          borderRadius: BorderRadius.circular(16),
+          borderRadius:
+              BorderRadius.circular(16),
 
-          border: Border.all(color: AppTheme.green.withValues(alpha: 0.10)),
+          border: Border.all(
+            color: AppTheme.green
+                .withValues(alpha: 0.10),
+          ),
         ),
 
         clipBehavior: Clip.antiAlias,
 
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
 
           children: [
             // =====================================================
@@ -521,7 +712,8 @@ class _HomePageState extends State<HomePage> {
 
                 fit: BoxFit.cover,
 
-                errorBuilder: (context, error, stackTrace) {
+                errorBuilder:
+                    (context, error, stackTrace) {
                   return Container(
                     color: AppTheme.cardLight,
 
@@ -538,11 +730,14 @@ class _HomePageState extends State<HomePage> {
             // =====================================================
             // INFORMASI
             // =====================================================
+
             Padding(
-              padding: const EdgeInsets.all(11),
+              padding:
+                  const EdgeInsets.all(11),
 
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
 
                 children: [
                   Text(
@@ -559,14 +754,19 @@ class _HomePageState extends State<HomePage> {
 
                   Row(
                     children: [
-                      const Icon(Icons.star, color: AppTheme.yellow, size: 13),
+                      const Icon(
+                        Icons.star,
+                        color: AppTheme.yellow,
+                        size: 13,
+                      ),
 
                       const SizedBox(width: 4),
 
                       Text(
                         rating,
 
-                        style: const TextStyle(
+                        style:
+                            const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
                         ),
@@ -585,7 +785,8 @@ class _HomePageState extends State<HomePage> {
                       Text(
                         distance,
 
-                        style: const TextStyle(
+                        style:
+                            const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
                         ),
@@ -612,16 +813,22 @@ class _HomePageState extends State<HomePage> {
     String image,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin:
+          const EdgeInsets.only(bottom: 10),
 
-      padding: const EdgeInsets.all(8),
+      padding:
+          const EdgeInsets.all(8),
 
       decoration: BoxDecoration(
         color: AppTheme.card,
 
-        borderRadius: BorderRadius.circular(14),
+        borderRadius:
+            BorderRadius.circular(14),
 
-        border: Border.all(color: AppTheme.green.withValues(alpha: 0.10)),
+        border: Border.all(
+          color: AppTheme.green
+              .withValues(alpha: 0.10),
+        ),
       ),
 
       child: Row(
@@ -631,7 +838,8 @@ class _HomePageState extends State<HomePage> {
           // =====================================================
 
           ClipRRect(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius:
+                BorderRadius.circular(10),
 
             child: Image.asset(
               image,
@@ -641,14 +849,18 @@ class _HomePageState extends State<HomePage> {
 
               fit: BoxFit.cover,
 
-              errorBuilder: (context, error, stackTrace) {
+              errorBuilder:
+                  (context, error, stackTrace) {
                 return Container(
                   width: 62,
                   height: 62,
 
                   color: AppTheme.cardLight,
 
-                  child: const Icon(Icons.coffee, color: AppTheme.green),
+                  child: const Icon(
+                    Icons.coffee,
+                    color: AppTheme.green,
+                  ),
                 );
               },
             ),
@@ -659,9 +871,11 @@ class _HomePageState extends State<HomePage> {
           // =====================================================
           // INFORMASI
           // =====================================================
+
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
 
               children: [
                 Text(
@@ -669,7 +883,8 @@ class _HomePageState extends State<HomePage> {
 
                   style: const TextStyle(
                     color: AppTheme.white,
-                    fontWeight: FontWeight.w600,
+                    fontWeight:
+                        FontWeight.w600,
                     fontSize: 13,
                   ),
                 ),
@@ -678,14 +893,19 @@ class _HomePageState extends State<HomePage> {
 
                 Row(
                   children: [
-                    const Icon(Icons.star, color: AppTheme.yellow, size: 12),
+                    const Icon(
+                      Icons.star,
+                      color: AppTheme.yellow,
+                      size: 12,
+                    ),
 
                     const SizedBox(width: 3),
 
                     Text(
                       rating,
 
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         color: AppTheme.grey,
                         fontSize: 11,
                       ),
@@ -704,7 +924,8 @@ class _HomePageState extends State<HomePage> {
                     Text(
                       distance,
 
-                      style: const TextStyle(
+                      style:
+                          const TextStyle(
                         color: AppTheme.grey,
                         fontSize: 11,
                       ),
@@ -718,6 +939,7 @@ class _HomePageState extends State<HomePage> {
           // =====================================================
           // ARROW
           // =====================================================
+
           Container(
             width: 34,
             height: 34,
@@ -725,7 +947,8 @@ class _HomePageState extends State<HomePage> {
             decoration: BoxDecoration(
               color: AppTheme.green,
 
-              borderRadius: BorderRadius.circular(10),
+              borderRadius:
+                  BorderRadius.circular(10),
             ),
 
             child: const Icon(
