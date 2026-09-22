@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/search.dart';
 import '../models/list_data.dart';
 import '../theme/app_theme.dart';
 import 'cafe_detail_page.dart';
@@ -15,39 +16,33 @@ class _ExplorePageState extends State<ExplorePage> {
   final TextEditingController searchController =
       TextEditingController();
 
-  // Semua toko diambil dari list_data.dart
+  // =====================================================
+  // DATA CAFE
+  // =====================================================
+
   List<String> cafes = [];
 
   @override
   void initState() {
     super.initState();
 
-    cafes = cafeData.keys.toList();
+    // Tampilkan semua cafe saat pertama kali dibuka
+    cafes = SearchFunction.searchCafe('');
 
     searchController.addListener(_searchCafe);
   }
 
   // =====================================================
-  // SEARCH LOGIC
+  // SEARCH
   // =====================================================
 
   void _searchCafe() {
-    final keyword = searchController.text.toLowerCase().trim();
+    final result = SearchFunction.searchCafe(
+      searchController.text,
+    );
 
     setState(() {
-      if (keyword.isEmpty) {
-        cafes = cafeData.keys.toList();
-      } else {
-        cafes = cafeData.keys.where((tokoId) {
-          final cafe = cafeData[tokoId]!;
-
-          final name = cafe['name']!.toLowerCase();
-          final about = cafe['about']!.toLowerCase();
-
-          return name.contains(keyword) ||
-              about.contains(keyword);
-        }).toList();
-      }
+      cafes = result;
     });
   }
 
@@ -135,18 +130,19 @@ class _ExplorePageState extends State<ExplorePage> {
                       size: 20,
                     ),
 
-                    suffixIcon: searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              searchController.clear();
-                            },
-                            icon: const Icon(
-                              Icons.close,
-                              color: AppTheme.grey,
-                              size: 19,
-                            ),
-                          )
-                        : null,
+                    suffixIcon:
+                        searchController.text.isNotEmpty
+                            ? IconButton(
+                                onPressed: () {
+                                  searchController.clear();
+                                },
+                                icon: const Icon(
+                                  Icons.close,
+                                  color: AppTheme.grey,
+                                  size: 19,
+                                ),
+                              )
+                            : null,
 
                     border: InputBorder.none,
                   ),
@@ -175,6 +171,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
                         return _cafeItem(
                           context,
+                          tokoId,
                           cafe['name']!,
                           cafe['rating']!,
                           cafe['distance']!,
@@ -197,6 +194,7 @@ class _ExplorePageState extends State<ExplorePage> {
 
   Widget _cafeItem(
     BuildContext context,
+    String tokoId,
     String name,
     String rating,
     String distance,
@@ -210,6 +208,7 @@ class _ExplorePageState extends State<ExplorePage> {
           context,
           MaterialPageRoute(
             builder: (_) => CafeDetailPage(
+              tokoId: tokoId,
               cafeName: name,
               rating: rating,
               distance: distance,
@@ -232,7 +231,10 @@ class _ExplorePageState extends State<ExplorePage> {
         ),
         child: Row(
           children: [
+            // =====================================================
             // FOTO CAFE
+            // =====================================================
+
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.asset(
@@ -260,10 +262,14 @@ class _ExplorePageState extends State<ExplorePage> {
 
             const SizedBox(width: 12),
 
+            // =====================================================
             // INFO CAFE
+            // =====================================================
+
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
@@ -331,7 +337,10 @@ class _ExplorePageState extends State<ExplorePage> {
 
             const SizedBox(width: 8),
 
+            // =====================================================
             // ARROW
+            // =====================================================
+
             Container(
               width: 34,
               height: 34,

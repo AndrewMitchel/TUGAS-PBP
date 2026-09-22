@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../models/model.dart';
 import '../pages/explore_page.dart';
 import '../pages/favorites_page.dart';
-import '../pages/profile_page.dart';
 import '../theme/app_theme.dart';
 
 class Navbar extends StatelessWidget {
@@ -30,10 +29,6 @@ class Navbar extends StatelessWidget {
     NavItem(
       icon: Icons.favorite_border,
       label: 'Favorites',
-    ),
-    NavItem(
-      icon: Icons.person_outline,
-      label: 'Profile',
     ),
   ];
 
@@ -71,11 +66,6 @@ class Navbar extends StatelessWidget {
             navItems[2],
             false,
           ),
-          _navItem(
-            context,
-            navItems[3],
-            false,
-          ),
         ],
       ),
     );
@@ -92,12 +82,18 @@ class Navbar extends StatelessWidget {
   ) {
     return GestureDetector(
       onTap: () {
+        // =====================================================
         // HOME
+        // =====================================================
+
         if (item.label == 'Home') {
           return;
         }
 
+        // =====================================================
         // EXPLORE
+        // =====================================================
+
         if (item.label == 'Explore') {
           Navigator.push(
             context,
@@ -107,7 +103,10 @@ class Navbar extends StatelessWidget {
           );
         }
 
+        // =====================================================
         // FAVORITES
+        // =====================================================
+
         if (item.label == 'Favorites') {
           Navigator.push(
             context,
@@ -116,19 +115,12 @@ class Navbar extends StatelessWidget {
             ),
           );
         }
-
-        // PROFILE
-        if (item.label == 'Profile') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => ProfilePage(
-                username: username,
-              ),
-            ),
-          );
-        }
       },
+
+      // =====================================================
+      // TAMPILAN ITEM NAVBAR
+      // =====================================================
+
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -137,7 +129,9 @@ class Navbar extends StatelessWidget {
             color: Colors.white,
             size: 21,
           ),
+
           const SizedBox(height: 4),
+
           Text(
             item.label,
             style: TextStyle(

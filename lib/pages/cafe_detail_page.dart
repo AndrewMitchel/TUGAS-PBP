@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-
+import '../fungsi/lastviewed.dart';
+import '../fungsi/favorite.dart';
 import '../theme/app_theme.dart';
 
-class CafeDetailPage extends StatelessWidget {
+class CafeDetailPage extends StatefulWidget {
+  final String tokoId;
   final String cafeName;
   final String rating;
   final String distance;
@@ -13,6 +15,7 @@ class CafeDetailPage extends StatelessWidget {
 
   const CafeDetailPage({
     super.key,
+    required this.tokoId,
     required this.cafeName,
     required this.rating,
     required this.distance,
@@ -22,9 +25,45 @@ class CafeDetailPage extends StatelessWidget {
   });
 
   @override
+  State<CafeDetailPage> createState() =>
+      _CafeDetailPageState();
+}
+
+class _CafeDetailPageState extends State<CafeDetailPage> {
+  // =====================================================
+  // CEK STATUS FAVORITE
+  // =====================================================
+
+  late bool isFavorite;
+
+  @override
+  void initState() {
+    super.initState();
+
+    LastViewedFunction.addLastViewed(widget.tokoId);
+
+    isFavorite = FavoriteFunction.isFavorite(
+      widget.tokoId,
+    );
+  }
+
+  // =====================================================
+  // TOGGLE FAVORITE
+  // =====================================================
+
+  void _toggleFavorite() {
+    setState(() {
+      isFavorite = FavoriteFunction.toggleFavorite(
+        widget.tokoId,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.background,
+
       body: CustomScrollView(
         slivers: [
           // =====================================================
@@ -44,22 +83,32 @@ class CafeDetailPage extends StatelessWidget {
                 238,
                 236,
               ),
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
             ),
+
+            // =====================================================
+            // FAVORITE BUTTON
+            // =====================================================
 
             actions: [
               IconButton(
-                icon: const Icon(
-                  Icons.favorite_border,
-                  color: Colors.white,
+                onPressed: _toggleFavorite,
+                icon: Icon(
+                  isFavorite
+                      ? Icons.favorite
+                      : Icons.favorite_border,
+                  color: isFavorite
+                      ? AppTheme.green
+                      : Colors.white,
                 ),
-                onPressed: () {},
               ),
             ],
 
             flexibleSpace: FlexibleSpaceBar(
               background: Image.asset(
-                imageUrl,
+                widget.imageUrl,
                 fit: BoxFit.cover,
               ),
             ),
@@ -72,9 +121,11 @@ class CafeDetailPage extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
+
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
+
                 children: [
                   // =====================================================
                   // NAMA + RATING
@@ -84,7 +135,7 @@ class CafeDetailPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: Text(
-                          cafeName,
+                          widget.cafeName,
                           style: const TextStyle(
                             color: AppTheme.white,
                             fontSize: 25,
@@ -102,7 +153,7 @@ class CafeDetailPage extends StatelessWidget {
                       const SizedBox(width: 4),
 
                       Text(
-                        rating,
+                        widget.rating,
                         style: const TextStyle(
                           color: AppTheme.white,
                         ),
@@ -127,7 +178,7 @@ class CafeDetailPage extends StatelessWidget {
                       const SizedBox(width: 4),
 
                       Text(
-                        '$distance away',
+                        '${widget.distance} away',
                         style: const TextStyle(
                           color: AppTheme.grey,
                         ),
@@ -178,7 +229,7 @@ class CafeDetailPage extends StatelessWidget {
                   const SizedBox(height: 18),
 
                   Text(
-                    about,
+                    widget.about,
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
@@ -236,18 +287,22 @@ class CafeDetailPage extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     height: 52,
+
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        if (mapUrl.isEmpty) {
+                        if (widget.mapUrl.isEmpty) {
                           return;
                         }
 
-                        final uri = Uri.parse(mapUrl);
+                        final uri = Uri.parse(
+                          widget.mapUrl,
+                        );
 
                         if (await canLaunchUrl(uri)) {
                           await launchUrl(
                             uri,
-                            mode: LaunchMode.externalApplication,
+                            mode: LaunchMode
+                                .externalApplication,
                           );
                         }
                       },
@@ -266,9 +321,11 @@ class CafeDetailPage extends StatelessWidget {
                       ),
 
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.green,
+                        backgroundColor:
+                            AppTheme.green,
 
-                        shape: RoundedRectangleBorder(
+                        shape:
+                            RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.circular(15),
                         ),

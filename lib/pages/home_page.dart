@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/search.dart';
 import '../models/list_data.dart';
 import '../models/recommended_data.dart';
 import '../models/trending_data.dart';
@@ -7,14 +8,13 @@ import '../theme/app_theme.dart';
 import '../widgets/background.dart';
 import '../widgets/navbar.dart';
 import 'cafe_detail_page.dart';
+import 'profile_page.dart';
+import 'list_cafe.dart';
 
 class HomePage extends StatefulWidget {
   final String username;
 
-  const HomePage({
-    super.key,
-    required this.username,
-  });
+  const HomePage({super.key, required this.username});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -25,8 +25,7 @@ class _HomePageState extends State<HomePage> {
   // SEARCH CONTROLLER
   // =====================================================
 
-  final TextEditingController searchController =
-      TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
   List<String> searchResults = [];
 
@@ -35,7 +34,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
 
     // Awalnya semua cafe tersedia
-    searchResults = cafeData.keys.toList();
+    searchResults = SearchFunction.searchCafe('');
 
     searchController.addListener(_searchCafe);
   }
@@ -45,22 +44,10 @@ class _HomePageState extends State<HomePage> {
   // =====================================================
 
   void _searchCafe() {
-    final keyword = searchController.text.toLowerCase().trim();
+    final result = SearchFunction.searchCafe(searchController.text);
 
     setState(() {
-      if (keyword.isEmpty) {
-        searchResults = cafeData.keys.toList();
-      } else {
-        searchResults = cafeData.keys.where((tokoId) {
-          final cafe = cafeData[tokoId]!;
-
-          final name = cafe['name']!.toLowerCase();
-          final about = cafe['about']!.toLowerCase();
-
-          return name.contains(keyword) ||
-              about.contains(keyword);
-        }).toList();
-      }
+      searchResults = result;
     });
   }
 
@@ -73,8 +60,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isSearching =
-        searchController.text.trim().isNotEmpty;
+    final bool isSearching = searchController.text.trim().isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -82,18 +68,14 @@ class _HomePageState extends State<HomePage> {
       // =====================================================
       // BODY
       // =====================================================
-
       body: Background(
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(
-              20,
-              20,
-              20,
-              100,
-            ),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+
               children: [
                 // =====================================================
                 // HEADER
@@ -103,8 +85,8 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+
                         children: [
                           Text(
                             'Hi, ${widget.username}',
@@ -129,16 +111,33 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
 
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.green,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person_outline,
-                        color: Colors.white,
+                    // =====================================================
+                    // PROFILE
+                    // =====================================================
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ProfilePage(username: widget.username),
+                          ),
+                        );
+                      },
+
+                      child: Container(
+                        width: 42,
+                        height: 42,
+
+                        decoration: const BoxDecoration(
+                          color: AppTheme.green,
+                          shape: BoxShape.circle,
+                        ),
+
+                        child: const Icon(
+                          Icons.person_outline,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -149,7 +148,6 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // LOCATION
                 // =====================================================
-
                 Row(
                   children: [
                     const Icon(
@@ -162,10 +160,7 @@ class _HomePageState extends State<HomePage> {
 
                     const Text(
                       'Surabaya, Indonesia',
-                      style: TextStyle(
-                        color: AppTheme.grey,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppTheme.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -175,24 +170,26 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // SEARCH
                 // =====================================================
-
                 Container(
                   height: 48,
+
                   decoration: BoxDecoration(
                     color: AppTheme.card,
                     borderRadius: BorderRadius.circular(14),
+
                     border: Border.all(
-                      color: AppTheme.green
-                          .withValues(alpha: 0.10),
+                      color: AppTheme.green.withValues(alpha: 0.10),
                     ),
                   ),
+
                   child: TextField(
                     controller: searchController,
-                    style: const TextStyle(
-                      color: AppTheme.white,
-                    ),
+
+                    style: const TextStyle(color: AppTheme.white),
+
                     decoration: InputDecoration(
                       hintText: 'Search coffee shop...',
+
                       hintStyle: const TextStyle(
                         color: AppTheme.grey,
                         fontSize: 13,
@@ -204,23 +201,23 @@ class _HomePageState extends State<HomePage> {
                         size: 20,
                       ),
 
-                      suffixIcon:
-                          searchController.text.isNotEmpty
-                              ? IconButton(
-                                  onPressed: () {
-                                    searchController.clear();
-                                  },
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: AppTheme.grey,
-                                    size: 19,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.tune,
-                                  color: AppTheme.green,
-                                  size: 19,
-                                ),
+                      suffixIcon: searchController.text.isNotEmpty
+                          ? IconButton(
+                              onPressed: () {
+                                searchController.clear();
+                              },
+
+                              icon: const Icon(
+                                Icons.close,
+                                color: AppTheme.grey,
+                                size: 19,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.tune,
+                              color: AppTheme.green,
+                              size: 19,
+                            ),
 
                       border: InputBorder.none,
                     ),
@@ -232,7 +229,6 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // SEARCH RESULT
                 // =====================================================
-
                 if (isSearching) ...[
                   const Text(
                     'Search Result',
@@ -257,6 +253,7 @@ class _HomePageState extends State<HomePage> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => CafeDetailPage(
+                                tokoId: tokoId,
                                 cafeName: cafe['name']!,
                                 rating: cafe['rating']!,
                                 distance: cafe['distance']!,
@@ -267,6 +264,7 @@ class _HomePageState extends State<HomePage> {
                             ),
                           );
                         },
+
                         child: _trendingCard(
                           cafe['name']!,
                           cafe['rating']!,
@@ -282,33 +280,31 @@ class _HomePageState extends State<HomePage> {
                 // =====================================================
                 // NORMAL HOME CONTENT
                 // =====================================================
-
                 if (!isSearching) ...[
                   // =====================================================
                   // RECOMMENDED
                   // =====================================================
 
-                  _sectionTitle(
-                    'Recommended',
-                    'See all',
-                  ),
+                  _sectionTitle('Recommended', 'See all', 'recommended'),
 
                   const SizedBox(height: 13),
 
                   SizedBox(
                     height: 205,
+
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      itemCount: recommendedCafes.length,
-                      itemBuilder: (context, index) {
-                        final tokoId =
-                            recommendedCafes[index];
 
-                        final cafe =
-                            cafeData[tokoId]!;
+                      itemCount: recommendedCafes.length,
+
+                      itemBuilder: (context, index) {
+                        final tokoId = recommendedCafes[index];
+
+                        final cafe = cafeData[tokoId]!;
 
                         return _coffeeCard(
                           context,
+                          tokoId,
                           cafe['name']!,
                           cafe['distance']!,
                           cafe['rating']!,
@@ -325,49 +321,40 @@ class _HomePageState extends State<HomePage> {
                   // =====================================================
                   // TRENDING COFFEE
                   // =====================================================
-
-                  _sectionTitle(
-                    'Trending Coffee',
-                    'See all',
-                  ),
+                  _sectionTitle('Trending Coffee', 'See all', 'trending'),
 
                   const SizedBox(height: 10),
 
                   ListView.builder(
                     shrinkWrap: true,
-                    physics:
-                        const NeverScrollableScrollPhysics(),
-                    itemCount: trendingCafes.length,
-                    itemBuilder: (context, index) {
-                      final tokoId =
-                          trendingCafes[index];
 
-                      final cafe =
-                          cafeData[tokoId]!;
+                    physics: const NeverScrollableScrollPhysics(),
+
+                    itemCount: trendingCafes.length,
+
+                    itemBuilder: (context, index) {
+                      final tokoId = trendingCafes[index];
+
+                      final cafe = cafeData[tokoId]!;
 
                       return GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  CafeDetailPage(
-                                cafeName:
-                                    cafe['name']!,
-                                rating:
-                                    cafe['rating']!,
-                                distance:
-                                    cafe['distance']!,
-                                imageUrl:
-                                    cafe['image']!,
-                                about:
-                                    cafe['about']!,
-                                mapUrl:
-                                    cafe['mapUrl']!,
+                              builder: (_) => CafeDetailPage(
+                                tokoId: tokoId,
+                                cafeName: cafe['name']!,
+                                rating: cafe['rating']!,
+                                distance: cafe['distance']!,
+                                imageUrl: cafe['image']!,
+                                about: cafe['about']!,
+                                mapUrl: cafe['mapUrl']!,
                               ),
                             ),
                           );
                         },
+
                         child: _trendingCard(
                           cafe['name']!,
                           cafe['rating']!,
@@ -387,10 +374,7 @@ class _HomePageState extends State<HomePage> {
       // =====================================================
       // BOTTOM NAVIGATION
       // =====================================================
-
-      bottomNavigationBar: Navbar(
-        username: widget.username,
-      ),
+      bottomNavigationBar: Navbar(username: widget.username),
     );
   }
 
@@ -400,17 +384,14 @@ class _HomePageState extends State<HomePage> {
 
   Widget _emptySearch() {
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        vertical: 50,
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 50),
+
       child: Center(
         child: Column(
           children: [
             Icon(
               Icons.search_off,
-              color: AppTheme.grey.withValues(
-                alpha: 0.7,
-              ),
+              color: AppTheme.grey.withValues(alpha: 0.7),
               size: 50,
             ),
 
@@ -429,10 +410,7 @@ class _HomePageState extends State<HomePage> {
 
             const Text(
               'Coba gunakan kata kunci lain.',
-              style: TextStyle(
-                color: AppTheme.grey,
-                fontSize: 12,
-              ),
+              style: TextStyle(color: AppTheme.grey, fontSize: 12),
             ),
           ],
         ),
@@ -444,13 +422,10 @@ class _HomePageState extends State<HomePage> {
   // SECTION TITLE
   // =====================================================
 
-  Widget _sectionTitle(
-    String title,
-    String action,
-  ) {
+  Widget _sectionTitle(String title, String action, String type) {
     return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
       children: [
         Text(
           title,
@@ -461,11 +436,21 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
 
-        Text(
-          action,
-          style: const TextStyle(
-            color: AppTheme.green,
-            fontSize: 12,
+        // =====================================================
+        // SEE ALL
+        // =====================================================
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+
+              MaterialPageRoute(builder: (_) => ListCafePage(type: type)),
+            );
+          },
+
+          child: Text(
+            action,
+            style: const TextStyle(color: AppTheme.green, fontSize: 12),
           ),
         ),
       ],
@@ -478,6 +463,7 @@ class _HomePageState extends State<HomePage> {
 
   Widget _coffeeCard(
     BuildContext context,
+    String tokoId,
     String name,
     String distance,
     String rating,
@@ -491,6 +477,7 @@ class _HomePageState extends State<HomePage> {
           context,
           MaterialPageRoute(
             builder: (_) => CafeDetailPage(
+              tokoId: tokoId,
               cafeName: name,
               rating: rating,
               distance: distance,
@@ -504,34 +491,40 @@ class _HomePageState extends State<HomePage> {
 
       child: Container(
         width: 220,
+
         margin: const EdgeInsets.only(right: 14),
+
         decoration: BoxDecoration(
           color: AppTheme.card,
+
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppTheme.green
-                .withValues(alpha: 0.10),
-          ),
+
+          border: Border.all(color: AppTheme.green.withValues(alpha: 0.10)),
         ),
+
         clipBehavior: Clip.antiAlias,
 
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+
           children: [
+            // =====================================================
+            // FOTO
+            // =====================================================
+
             SizedBox(
               height: 135,
               width: double.infinity,
+
               child: Image.asset(
                 image,
+
                 fit: BoxFit.cover,
-                errorBuilder: (
-                  context,
-                  error,
-                  stackTrace,
-                ) {
+
+                errorBuilder: (context, error, stackTrace) {
                   return Container(
                     color: AppTheme.cardLight,
+
                     child: const Icon(
                       Icons.coffee,
                       color: AppTheme.green,
@@ -542,16 +535,19 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
+            // =====================================================
+            // INFORMASI
+            // =====================================================
             Padding(
-              padding:
-                  const EdgeInsets.all(11),
+              padding: const EdgeInsets.all(11),
 
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+
                 children: [
                   Text(
                     name,
+
                     style: const TextStyle(
                       color: AppTheme.white,
                       fontSize: 14,
@@ -563,16 +559,13 @@ class _HomePageState extends State<HomePage> {
 
                   Row(
                     children: [
-                      const Icon(
-                        Icons.star,
-                        color: AppTheme.yellow,
-                        size: 13,
-                      ),
+                      const Icon(Icons.star, color: AppTheme.yellow, size: 13),
 
                       const SizedBox(width: 4),
 
                       Text(
                         rating,
+
                         style: const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
@@ -591,6 +584,7 @@ class _HomePageState extends State<HomePage> {
 
                       Text(
                         distance,
+
                         style: const TextStyle(
                           color: AppTheme.grey,
                           fontSize: 11,
@@ -618,47 +612,43 @@ class _HomePageState extends State<HomePage> {
     String image,
   ) {
     return Container(
-      margin:
-          const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 10),
 
-      padding:
-          const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(8),
 
       decoration: BoxDecoration(
         color: AppTheme.card,
-        borderRadius:
-            BorderRadius.circular(14),
-        border: Border.all(
-          color: AppTheme.green
-              .withValues(alpha: 0.10),
-        ),
+
+        borderRadius: BorderRadius.circular(14),
+
+        border: Border.all(color: AppTheme.green.withValues(alpha: 0.10)),
       ),
 
       child: Row(
         children: [
+          // =====================================================
+          // FOTO
+          // =====================================================
+
           ClipRRect(
-            borderRadius:
-                BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(10),
 
             child: Image.asset(
               image,
+
               width: 62,
               height: 62,
+
               fit: BoxFit.cover,
 
-              errorBuilder: (
-                context,
-                error,
-                stackTrace,
-              ) {
+              errorBuilder: (context, error, stackTrace) {
                 return Container(
                   width: 62,
                   height: 62,
+
                   color: AppTheme.cardLight,
-                  child: const Icon(
-                    Icons.coffee,
-                    color: AppTheme.green,
-                  ),
+
+                  child: const Icon(Icons.coffee, color: AppTheme.green),
                 );
               },
             ),
@@ -666,17 +656,20 @@ class _HomePageState extends State<HomePage> {
 
           const SizedBox(width: 12),
 
+          // =====================================================
+          // INFORMASI
+          // =====================================================
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
+
               children: [
                 Text(
                   name,
+
                   style: const TextStyle(
                     color: AppTheme.white,
-                    fontWeight:
-                        FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                     fontSize: 13,
                   ),
                 ),
@@ -685,21 +678,15 @@ class _HomePageState extends State<HomePage> {
 
                 Row(
                   children: [
-                    const Icon(
-                      Icons.star,
-                      color:
-                          AppTheme.yellow,
-                      size: 12,
-                    ),
+                    const Icon(Icons.star, color: AppTheme.yellow, size: 12),
 
                     const SizedBox(width: 3),
 
                     Text(
                       rating,
-                      style:
-                          const TextStyle(
-                        color:
-                            AppTheme.grey,
+
+                      style: const TextStyle(
+                        color: AppTheme.grey,
                         fontSize: 11,
                       ),
                     ),
@@ -708,8 +695,7 @@ class _HomePageState extends State<HomePage> {
 
                     const Icon(
                       Icons.location_on_outlined,
-                      color:
-                          AppTheme.green,
+                      color: AppTheme.green,
                       size: 12,
                     ),
 
@@ -717,10 +703,9 @@ class _HomePageState extends State<HomePage> {
 
                     Text(
                       distance,
-                      style:
-                          const TextStyle(
-                        color:
-                            AppTheme.grey,
+
+                      style: const TextStyle(
+                        color: AppTheme.grey,
                         fontSize: 11,
                       ),
                     ),
@@ -730,13 +715,17 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // =====================================================
+          // ARROW
+          // =====================================================
           Container(
             width: 34,
             height: 34,
+
             decoration: BoxDecoration(
               color: AppTheme.green,
-              borderRadius:
-                  BorderRadius.circular(10),
+
+              borderRadius: BorderRadius.circular(10),
             ),
 
             child: const Icon(
