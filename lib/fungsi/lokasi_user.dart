@@ -51,7 +51,8 @@ class LokasiUserFunction {
       final Position position =
           await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          // LOW cukup karena kita hanya membutuhkan nama kota
+          // LOW cukup karena kita hanya membutuhkan
+          // nama kecamatan dan kabupaten/kota
           accuracy: LocationAccuracy.low,
         ),
       );
@@ -98,37 +99,48 @@ class LokasiUserFunction {
           data['address'] ?? {};
 
       // =====================================================
-      // AMBIL NAMA KOTA
+      // AMBIL NAMA KECAMATAN
       // =====================================================
 
-      String kota =
-          address['city'] ??
-          address['town'] ??
-          address['municipality'] ??
-          address['village'] ??
+      final String kecamatan =
+          address['suburb'] ??
+          address['district'] ??
+          address['city_district'] ??
           '';
 
       // =====================================================
-      // AMBIL NAMA NEGARA
+      // AMBIL NAMA KABUPATEN / KOTA
       // =====================================================
 
-      final String negara =
-          address['country'] ?? '';
+      final String kabupatenKota =
+          address['city'] ??
+          address['town'] ??
+          address['municipality'] ??
+          '';
 
       // =====================================================
-      // GABUNGKAN LOKASI
+      // GABUNGKAN KECAMATAN + KABUPATEN/KOTA
       // =====================================================
 
-      if (kota.isNotEmpty && negara.isNotEmpty) {
-        return '$kota, $negara';
+      if (kecamatan.isNotEmpty &&
+          kabupatenKota.isNotEmpty) {
+        return '$kecamatan, $kabupatenKota';
       }
 
-      if (kota.isNotEmpty) {
-        return kota;
+      // =====================================================
+      // KALAU KECAMATAN TIDAK DITEMUKAN
+      // =====================================================
+
+      if (kabupatenKota.isNotEmpty) {
+        return kabupatenKota;
       }
 
-      if (negara.isNotEmpty) {
-        return negara;
+      // =====================================================
+      // KALAU KABUPATEN/KOTA TIDAK DITEMUKAN
+      // =====================================================
+
+      if (kecamatan.isNotEmpty) {
+        return kecamatan;
       }
 
       return 'Lokasi tidak ditemukan';
