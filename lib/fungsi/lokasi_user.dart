@@ -33,14 +33,16 @@ class LokasiUserFunction {
           await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+        permission =
+            await Geolocator.requestPermission();
 
         if (permission == LocationPermission.denied) {
           return 'Permission ditolak';
         }
       }
 
-      if (permission == LocationPermission.deniedForever) {
+      if (permission ==
+          LocationPermission.deniedForever) {
         return 'Permission ditolak permanen';
       }
 
@@ -50,10 +52,10 @@ class LokasiUserFunction {
 
       final Position position =
           await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(
-          // LOW cukup karena kita hanya membutuhkan
-          // nama kecamatan dan kabupaten/kota
-          accuracy: LocationAccuracy.low,
+        locationSettings:
+            const LocationSettings(
+          accuracy:
+              LocationAccuracy.medium,
         ),
       );
 
@@ -67,17 +69,28 @@ class LokasiUserFunction {
         '?lat=${position.latitude}'
         '&lon=${position.longitude}'
         '&format=json'
-        '&addressdetails=1',
+        '&addressdetails=1'
+        '&accept-language=id',
       );
 
       // =====================================================
       // REQUEST KE OPENSTREETMAP
       // =====================================================
 
-      final response = await http.get(
+      final response = await http
+          .get(
         url,
-      ).timeout(
-        const Duration(seconds: 10),
+        headers: {
+          'User-Agent':
+              'CoffeeFinder/1.0',
+          'Accept':
+              'application/json',
+        },
+      )
+          .timeout(
+        const Duration(
+          seconds: 10,
+        ),
       );
 
       // =====================================================
@@ -95,17 +108,26 @@ class LokasiUserFunction {
       final Map<String, dynamic> data =
           jsonDecode(response.body);
 
+      // =====================================================
+      // AMBIL ADDRESS
+      // =====================================================
+
       final Map<String, dynamic> address =
-          data['address'] ?? {};
+          data['address'] != null
+              ? Map<String, dynamic>.from(
+                  data['address'],
+                )
+              : {};
 
       // =====================================================
       // AMBIL NAMA KECAMATAN
       // =====================================================
 
       final String kecamatan =
-          address['suburb'] ??
-          address['district'] ??
-          address['city_district'] ??
+          address['suburb']?.toString() ??
+          address['district']?.toString() ??
+          address['city_district']?.toString() ??
+          address['village']?.toString() ??
           '';
 
       // =====================================================
@@ -113,9 +135,10 @@ class LokasiUserFunction {
       // =====================================================
 
       final String kabupatenKota =
-          address['city'] ??
-          address['town'] ??
-          address['municipality'] ??
+          address['city']?.toString() ??
+          address['town']?.toString() ??
+          address['municipality']?.toString() ??
+          address['county']?.toString() ??
           '';
 
       // =====================================================
@@ -128,7 +151,7 @@ class LokasiUserFunction {
       }
 
       // =====================================================
-      // KALAU KECAMATAN TIDAK DITEMUKAN
+      // KALAU HANYA KABUPATEN / KOTA
       // =====================================================
 
       if (kabupatenKota.isNotEmpty) {
@@ -136,12 +159,28 @@ class LokasiUserFunction {
       }
 
       // =====================================================
-      // KALAU KABUPATEN/KOTA TIDAK DITEMUKAN
+      // KALAU HANYA KECAMATAN
       // =====================================================
 
       if (kecamatan.isNotEmpty) {
         return kecamatan;
       }
+
+      // =====================================================
+      // FALLBACK
+      // AMBIL DISPLAY NAME DARI NOMINATIM
+      // =====================================================
+
+      final String displayName =
+          data['display_name']?.toString() ?? '';
+
+      if (displayName.isNotEmpty) {
+        return displayName;
+      }
+
+      // =====================================================
+      // LOKASI BENAR-BENAR TIDAK DITEMUKAN
+      // =====================================================
 
       return 'Lokasi tidak ditemukan';
     } catch (e) {
