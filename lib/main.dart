@@ -1,14 +1,29 @@
-
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'pages/login_page.dart';
 import 'theme/app_theme.dart';
 
 // =====================================================
+// SUPABASE
+// =====================================================
+
+const String supabaseUrl = 'https://wrjwiiqzjobzoghhiode.supabase.co';
+
+const String supabasePublishableKey ='sb_publishable_ZC4xVsnV_eWK5I_tk3KtoQ_QxY05dD-';
+
+// =====================================================
 // MAIN
 // =====================================================
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Supabase.initialize(
+    url: supabaseUrl,
+    publishableKey: supabasePublishableKey,
+  );
+
   runApp(const CoffeeFinderApp());
 }
 

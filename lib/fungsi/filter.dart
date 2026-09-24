@@ -1,3 +1,5 @@
+import 'package:geolocator/geolocator.dart';
+
 import '../models/list_data.dart';
 
 // =====================================================
@@ -6,29 +8,58 @@ import '../models/list_data.dart';
 
 class FilterFunction {
   // =====================================================
+  // HITUNG JARAK CAFE
+  // =====================================================
+
+  static double hitungJarak({
+    required Position userPosition,
+    required String tokoId,
+  }) {
+    final cafe = cafeData[tokoId]!;
+
+    final double? cafeLatitude =
+        double.tryParse(
+      cafe['latitude'] ?? '',
+    );
+
+    final double? cafeLongitude =
+        double.tryParse(
+      cafe['longitude'] ?? '',
+    );
+
+    // Kalau koordinat cafe tidak tersedia
+    if (cafeLatitude == null ||
+        cafeLongitude == null) {
+      return double.infinity;
+    }
+
+    final double distanceInMeters =
+        Geolocator.distanceBetween(
+      userPosition.latitude,
+      userPosition.longitude,
+      cafeLatitude,
+      cafeLongitude,
+    );
+
+    // Ubah meter menjadi kilometer
+    return distanceInMeters / 1000;
+  }
+
+  // =====================================================
   // FILTER BERDASARKAN JARAK
   // =====================================================
 
-  static List<String> filterByDistance(double maxDistance) {
+  static List<String> filterByDistance({
+    required double maxDistance,
+    required Position userPosition,
+  }) {
     return cafeData.keys.where((tokoId) {
-      final cafe = cafeData[tokoId]!;
-
-      // Ambil jarak dari data cafe
-      // Contoh: "1.2 km"
-      final String distanceText = cafe['distance']!;
-
-      // Hapus tulisan "km"
-      // Contoh: "1.2 km" -> "1.2"
       final double distance =
-          double.tryParse(
-            distanceText
-                .replaceAll('km', '')
-                .trim(),
-          ) ??
-          999;
+          hitungJarak(
+        userPosition: userPosition,
+        tokoId: tokoId,
+      );
 
-      // Cafe masuk kalau jaraknya
-      // sama dengan atau kurang dari filter
       return distance <= maxDistance;
     }).toList();
   }
@@ -37,20 +68,19 @@ class FilterFunction {
   // FILTER BERDASARKAN RATING
   // =====================================================
 
-  static List<String> filterByRating(double minRating) {
+  static List<String> filterByRating(
+    double minRating,
+  ) {
     return cafeData.keys.where((tokoId) {
-      final cafe = cafeData[tokoId]!;
+      final cafe =
+          cafeData[tokoId]!;
 
-      // Ambil rating dari data cafe
-      // Contoh: "4.8"
       final double rating =
           double.tryParse(
-            cafe['rating']!,
+            cafe['rating'] ?? '',
           ) ??
           0;
 
-      // Cafe masuk kalau ratingnya
-      // sama dengan atau lebih tinggi dari filter
       return rating >= minRating;
     }).toList();
   }
@@ -62,49 +92,51 @@ class FilterFunction {
   static List<String> filterCafe({
     double? maxDistance,
     double? minRating,
+    Position? userPosition,
   }) {
     return cafeData.keys.where((tokoId) {
-      final cafe = cafeData[tokoId]!;
+      final cafe =
+          cafeData[tokoId]!;
 
-      // =====================================================
+      // =================================================
       // CEK JARAK
-      // =====================================================
+      // =================================================
 
       if (maxDistance != null) {
-        final double distance =
-            double.tryParse(
-              cafe['distance']!
-                  .replaceAll('km', '')
-                  .trim(),
-            ) ??
-            999;
+        // Kalau lokasi user belum tersedia,
+        // cafe tidak bisa difilter berdasarkan jarak.
+        if (userPosition == null) {
+          return false;
+        }
 
-        // Kalau jarak melebihi filter,
-        // cafe tidak dimasukkan
+        final double distance =
+            hitungJarak(
+          userPosition:
+              userPosition,
+          tokoId: tokoId,
+        );
+
         if (distance > maxDistance) {
           return false;
         }
       }
 
-      // =====================================================
+      // =================================================
       // CEK RATING
-      // =====================================================
+      // =================================================
 
       if (minRating != null) {
         final double rating =
             double.tryParse(
-              cafe['rating']!,
+              cafe['rating'] ?? '',
             ) ??
             0;
 
-        // Kalau rating kurang dari filter,
-        // cafe tidak dimasukkan
         if (rating < minRating) {
           return false;
         }
       }
 
-      // Kalau semua syarat terpenuhi
       return true;
     }).toList();
   }

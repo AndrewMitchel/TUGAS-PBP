@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+
 import '../fungsi/lastviewed.dart';
 import '../fungsi/favorite.dart';
 import '../theme/app_theme.dart';
@@ -59,6 +60,81 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
     });
   }
 
+  // =====================================================
+  // FOTO CAFE
+  // =====================================================
+
+  Widget _buildCafeImage() {
+    if (widget.imageUrl.trim().isEmpty) {
+      return Container(
+        color: AppTheme.cardLight,
+        child: const Center(
+          child: Icon(
+            Icons.coffee,
+            color: AppTheme.green,
+            size: 60,
+          ),
+        ),
+      );
+    }
+
+    return Image.network(
+      widget.imageUrl.trim(),
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+
+      loadingBuilder: (
+        BuildContext context,
+        Widget child,
+        ImageChunkEvent? loadingProgress,
+      ) {
+        if (loadingProgress == null) {
+          return child;
+        }
+
+        return Container(
+          color: AppTheme.cardLight,
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: AppTheme.green,
+            ),
+          ),
+        );
+      },
+
+      errorBuilder: (
+        BuildContext context,
+        Object error,
+        StackTrace? stackTrace,
+      ) {
+        return Container(
+          color: AppTheme.cardLight,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.broken_image_outlined,
+                  color: AppTheme.green,
+                  size: 55,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Foto gagal dimuat',
+                  style: TextStyle(
+                    color: AppTheme.grey,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,7 +152,9 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
             backgroundColor: AppTheme.background,
 
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(
+                Icons.arrow_back,
+              ),
               color: const Color.fromARGB(
                 255,
                 241,
@@ -106,11 +184,12 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
               ),
             ],
 
+            // =====================================================
+            // IMAGE
+            // =====================================================
+
             flexibleSpace: FlexibleSpaceBar(
-              background: Image.asset(
-                widget.imageUrl,
-                fit: BoxFit.cover,
-              ),
+              background: _buildCafeImage(),
             ),
           ),
 

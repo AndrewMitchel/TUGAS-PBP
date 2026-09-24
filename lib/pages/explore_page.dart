@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../fungsi/filter.dart';
+import '../fungsi/jarak.dart';
 import '../fungsi/search.dart';
 import '../models/list_data.dart';
 import '../theme/app_theme.dart';
@@ -11,16 +13,26 @@ class ExplorePage extends StatefulWidget {
   const ExplorePage({super.key});
 
   @override
-  State<ExplorePage> createState() => _ExplorePageState();
+  State<ExplorePage> createState() =>
+      _ExplorePageState();
 }
 
-class _ExplorePageState extends State<ExplorePage> {
-  final TextEditingController searchController =
-      TextEditingController();
+class _ExplorePageState extends State<ExplorePage>
+    with WidgetsBindingObserver {
+  // =====================================================
+  // SUPABASE
+  // =====================================================
+
+  final supabase =
+      Supabase.instance.client;
 
   // =====================================================
-  // DATA CAFE
+  // SEARCH
   // =====================================================
+
+  final TextEditingController
+      searchController =
+      TextEditingController();
 
   List<String> cafes = [];
 
@@ -33,14 +45,231 @@ class _ExplorePageState extends State<ExplorePage> {
 
   bool isFiltering = false;
 
+  // =====================================================
+  // LOADING
+  // =====================================================
+
+  bool isLoading = true;
+
+  String? errorMessage;
+
+  // =====================================================
+  // INIT
+  // =====================================================
+
   @override
   void initState() {
     super.initState();
 
-    // Tampilkan semua cafe saat pertama kali dibuka
-    cafes = SearchFunction.searchCafe('');
+    WidgetsBinding.instance
+        .addObserver(this);
 
-    searchController.addListener(_searchCafe);
+    searchController.addListener(
+      _searchCafe,
+    );
+
+    JarakFunction.userPosition
+        .addListener(_locationChanged);
+
+    JarakFunction.startLiveLocation();
+
+    _loadCoffeePlaces();
+  }
+
+  // =====================================================
+  // LOCATION BERUBAH
+  // =====================================================
+
+  void _locationChanged() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {});
+  }
+
+  // =====================================================
+  // REFRESH SAAT KEMBALI KE APP
+  // =====================================================
+
+  @override
+  void didChangeAppLifecycleState(
+    AppLifecycleState state,
+  ) {
+    if (state ==
+        AppLifecycleState.resumed) {
+      JarakFunction.startLiveLocation();
+      _loadCoffeePlaces();
+    }
+  }
+
+  // =====================================================
+  // HITUNG JARAK
+  // =====================================================
+
+  String getCafeDistance(
+    String tokoId,
+  ) {
+    return JarakFunction.hitungJarakCafe(
+      tokoId: tokoId,
+      cafeData: cafeData,
+    );
+  }
+
+  // =====================================================
+  // LOAD DATA DARI SUPABASE
+  // =====================================================
+
+  Future<void>
+      _loadCoffeePlaces() async {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response =
+          await supabase
+              .from('coffee_places')
+              .select()
+              .order(
+                'id',
+                ascending: true,
+              );
+
+      // =================================================
+      // BERSIHKAN DATA LAMA
+      // =================================================
+
+      cafeData.clear();
+
+      // =================================================
+      // MASUKKAN DATA SUPABASE
+      // =================================================
+
+      for (final item
+          in response) {
+        final data =
+            Map<String, dynamic>
+                .from(item);
+
+        final int id =
+            (data['id'] as num)
+                .toInt();
+
+        final String tokoId =
+            'toko$id';
+
+        cafeData[tokoId] = {
+          'name':
+              data['name']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'rating':
+              data['rating']
+                      ?.toString()
+                      .trim() ??
+                  '0',
+
+          'latitude':
+              data['latitude']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'longitude':
+              data['longitude']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'mapUrl':
+              data['map_url']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'about':
+              data['about']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'image':
+              data['image_url']
+                      ?.toString()
+                      .trim() ??
+                  '',
+
+          'distance':
+              '',
+
+          'isRecommended':
+              data['is_recommended']
+                      ?.toString() ??
+                  'false',
+
+          'isTrending':
+              data['is_trending']
+                      ?.toString() ??
+                  'false',
+        };
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        isLoading = false;
+
+        if (isFiltering) {
+          cafes =
+              FilterFunction
+                  .filterCafe(
+            maxDistance:
+                selectedDistance,
+            minRating:
+                selectedRating,
+            userPosition:
+                JarakFunction
+                    .userPosition
+                    .value,
+          );
+        } else {
+          cafes =
+              SearchFunction
+                  .searchCafe(
+            searchController
+                .text
+                .trim(),
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint(
+        'ERROR EXPLORE: $e',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        isLoading = false;
+
+        errorMessage =
+            'Gagal mengambil data coffee shop.';
+
+        cafes = [];
+      });
+    }
   }
 
   // =====================================================
@@ -48,70 +277,72 @@ class _ExplorePageState extends State<ExplorePage> {
   // =====================================================
 
   void _searchCafe() {
+    if (isLoading) {
+      return;
+    }
+
     final String keyword =
         searchController.text.trim();
 
-    // =====================================================
-    // KALAU ADA SEARCH
-    // =====================================================
-
     if (keyword.isNotEmpty) {
-      final result =
-          SearchFunction.searchCafe(keyword);
-
       setState(() {
-        cafes = result;
+        cafes =
+            SearchFunction.searchCafe(
+          keyword,
+        );
       });
 
       return;
     }
-
-    // =====================================================
-    // KALAU SEARCH DIKOSONGKAN DAN FILTER AKTIF
-    // =====================================================
 
     if (isFiltering) {
-      final result =
-          FilterFunction.filterCafe(
-        maxDistance: selectedDistance,
-        minRating: selectedRating,
-      );
-
       setState(() {
-        cafes = result;
+        cafes =
+            FilterFunction.filterCafe(
+          maxDistance:
+              selectedDistance,
+          minRating:
+              selectedRating,
+          userPosition:
+              JarakFunction
+                  .userPosition
+                  .value,
+        );
       });
 
       return;
     }
 
-    // =====================================================
-    // KALAU TIDAK ADA SEARCH DAN FILTER
-    // =====================================================
-
     setState(() {
-      cafes = SearchFunction.searchCafe('');
+      cafes =
+          SearchFunction
+              .searchCafe('');
     });
   }
 
   // =====================================================
-  // BUKA FILTER
+  // FILTER
   // =====================================================
 
-  Future<void> _openFilter() async {
-    final result = await showModalBottomSheet<
-        Map<String, double?>?>(
+  Future<void>
+      _openFilter() async {
+    final result =
+        await showModalBottomSheet<
+            Map<String, double?>?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor:
+          Colors.transparent,
       builder: (_) {
         return FilterSheet(
-          selectedDistance: selectedDistance,
-          selectedRating: selectedRating,
+          selectedDistance:
+              selectedDistance,
+          selectedRating:
+              selectedRating,
         );
       },
     );
 
-    // Kalau ditutup tanpa Apply
     if (result == null) {
       return;
     }
@@ -122,271 +353,429 @@ class _ExplorePageState extends State<ExplorePage> {
     final double? rating =
         result['rating'];
 
-    // =====================================================
-    // CEK FILTER
-    // =====================================================
-
     final bool filterAktif =
-        distance != null || rating != null;
+        distance != null ||
+            rating != null;
 
     setState(() {
-      selectedDistance = distance;
-      selectedRating = rating;
-      isFiltering = filterAktif;
+      selectedDistance =
+          distance;
+
+      selectedRating =
+          rating;
+
+      isFiltering =
+          filterAktif;
     });
 
-    // =====================================================
-    // TERAPKAN FILTER
-    // =====================================================
-
     if (filterAktif) {
-      final filtered =
-          FilterFunction.filterCafe(
-        maxDistance: selectedDistance,
-        minRating: selectedRating,
-      );
-
       setState(() {
-        cafes = filtered;
+        cafes =
+            FilterFunction.filterCafe(
+          maxDistance:
+              selectedDistance,
+          minRating:
+              selectedRating,
+          userPosition:
+              JarakFunction
+                  .userPosition
+                  .value,
+        );
       });
     } else {
-      // Kalau filter di-reset
       setState(() {
-        cafes = SearchFunction.searchCafe('');
+        cafes =
+            SearchFunction
+                .searchCafe('');
       });
     }
   }
 
+  // =====================================================
+  // REFRESH
+  // =====================================================
+
+  Future<void>
+      _refreshData() async {
+    await JarakFunction
+        .startLiveLocation();
+
+    await _loadCoffeePlaces();
+  }
+
+  // =====================================================
+  // DISPOSE
+  // =====================================================
+
   @override
   void dispose() {
-    searchController.removeListener(_searchCafe);
+    WidgetsBinding.instance
+        .removeObserver(this);
+
+    JarakFunction.userPosition
+        .removeListener(
+      _locationChanged,
+    );
+
+    searchController
+        .removeListener(
+      _searchCafe,
+    );
+
     searchController.dispose();
+
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
+  // =====================================================
+  // BUILD
+  // =====================================================
 
-      // =====================================================
-      // APP BAR
-      // =====================================================
+  @override
+  Widget build(
+    BuildContext context,
+  ) {
+    return Scaffold(
+      backgroundColor:
+          AppTheme.background,
 
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor:
+            AppTheme.background,
         elevation: 0,
-        centerTitle: false,
 
         title: const Text(
           'Explore',
           style: TextStyle(
             color: AppTheme.white,
             fontSize: 22,
-            fontWeight: FontWeight.bold,
+            fontWeight:
+                FontWeight.bold,
           ),
         ),
+
+        actions: [
+          IconButton(
+            onPressed:
+                isLoading
+                    ? null
+                    : _refreshData,
+            icon: const Icon(
+              Icons.refresh,
+              color:
+                  AppTheme.green,
+            ),
+          ),
+        ],
       ),
 
-      // =====================================================
-      // BODY
-      // =====================================================
-
       body: SafeArea(
-        child: Column(
-          children: [
-            // =====================================================
-            // SEARCH BAR
-            // =====================================================
-
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                20,
-                10,
-                20,
-                15,
-              ),
-              child: Container(
-                height: 48,
-
-                decoration: BoxDecoration(
-                  color: AppTheme.card,
-                  borderRadius:
-                      BorderRadius.circular(14),
-
-                  border: Border.all(
-                    color: AppTheme.green
-                        .withValues(alpha: 0.10),
-                  ),
+        child: isLoading
+            ? const Center(
+                child:
+                    CircularProgressIndicator(
+                  color:
+                      AppTheme.green,
                 ),
+              )
+            : errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment:
+                          MainAxisAlignment
+                              .center,
+                      children: [
+                        const Icon(
+                          Icons
+                              .cloud_off_outlined,
+                          color:
+                              AppTheme.grey,
+                          size: 50,
+                        ),
 
-                child: TextField(
-                  controller: searchController,
+                        const SizedBox(
+                          height: 12,
+                        ),
 
-                  style: const TextStyle(
-                    color: AppTheme.white,
-                  ),
+                        Text(
+                          errorMessage!,
+                          style:
+                              const TextStyle(
+                            color:
+                                AppTheme.grey,
+                          ),
+                        ),
 
-                  decoration: InputDecoration(
-                    hintText:
-                        'Search coffee shop...',
+                        const SizedBox(
+                          height: 12,
+                        ),
 
-                    hintStyle: const TextStyle(
-                      color: AppTheme.grey,
-                      fontSize: 13,
+                        ElevatedButton(
+                          onPressed:
+                              _refreshData,
+                          child:
+                              const Text(
+                            'Coba Lagi',
+                          ),
+                        ),
+                      ],
                     ),
+                  )
+                : Column(
+                    children: [
+                      // =====================================================
+                      // SEARCH
+                      // =====================================================
 
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppTheme.green,
-                      size: 20,
-                    ),
+                      Padding(
+                        padding:
+                            const EdgeInsets
+                                .fromLTRB(
+                          20,
+                          10,
+                          20,
+                          15,
+                        ),
 
-                    // =====================================================
-                    // FILTER / CLEAR BUTTON
-                    // =====================================================
+                        child:
+                            Container(
+                          height: 48,
 
-                    suffixIcon:
-                        searchController.text.isNotEmpty
-                            ? IconButton(
-                                // Kalau sedang search,
-                                // tombol berubah menjadi tombol clear
-                                onPressed: () {
-                                  searchController.clear();
-                                },
+                          decoration:
+                              BoxDecoration(
+                            color:
+                                AppTheme.card,
 
-                                icon: const Icon(
-                                  Icons.close,
-                                  color:
-                                      AppTheme.grey,
-                                  size: 19,
-                                ),
-                              )
-                            : IconButton(
-                                // Kalau search kosong,
-                                // tombol ini membuka FilterSheet
-                                onPressed: _openFilter,
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              14,
+                            ),
 
-                                icon: const Icon(
-                                  Icons.tune,
+                            border:
+                                Border.all(
+                              color:
+                                  AppTheme.green
+                                      .withValues(
+                                alpha:
+                                    0.10,
+                              ),
+                            ),
+                          ),
+
+                          child:
+                              TextField(
+                            controller:
+                                searchController,
+
+                            style:
+                                const TextStyle(
+                              color:
+                                  AppTheme.white,
+                            ),
+
+                            decoration:
+                                InputDecoration(
+                              hintText:
+                                  'Search coffee shop...',
+
+                              hintStyle:
+                                  const TextStyle(
+                                color:
+                                    AppTheme.grey,
+                                fontSize:
+                                    13,
+                              ),
+
+                              prefixIcon:
+                                  const Icon(
+                                Icons.search,
+                                color:
+                                    AppTheme.green,
+                                size: 20,
+                              ),
+
+                              suffixIcon:
+                                  searchController
+                                          .text
+                                          .isNotEmpty
+                                      ? IconButton(
+                                          onPressed:
+                                              () {
+                                            searchController
+                                                .clear();
+                                          },
+                                          icon:
+                                              const Icon(
+                                            Icons.close,
+                                            color:
+                                                AppTheme.grey,
+                                            size: 19,
+                                          ),
+                                        )
+                                      : IconButton(
+                                          onPressed:
+                                              _openFilter,
+                                          icon:
+                                              const Icon(
+                                            Icons.tune,
+                                            color:
+                                                AppTheme.green,
+                                            size: 19,
+                                          ),
+                                        ),
+
+                              border:
+                                  InputBorder
+                                      .none,
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // =====================================================
+                      // FILTER STATUS
+                      // =====================================================
+
+                      if (isFiltering)
+                        Padding(
+                          padding:
+                              const EdgeInsets
+                                  .fromLTRB(
+                            20,
+                            0,
+                            20,
+                            10,
+                          ),
+
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons
+                                    .filter_alt_outlined,
+                                color:
+                                    AppTheme.green,
+                                size: 15,
+                              ),
+
+                              const SizedBox(
+                                width: 5,
+                              ),
+
+                              const Text(
+                                'Filter aktif',
+                                style:
+                                    TextStyle(
                                   color:
                                       AppTheme.green,
-                                  size: 19,
+                                  fontSize:
+                                      11,
+                                  fontWeight:
+                                      FontWeight.bold,
                                 ),
                               ),
 
-                    border: InputBorder.none,
-                  ),
-                ),
-              ),
-            ),
+                              const Spacer(),
 
-            // =====================================================
-            // FILTER STATUS
-            // =====================================================
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    selectedDistance =
+                                        null;
 
-            if (isFiltering)
-              Padding(
-                padding:
-                    const EdgeInsets.fromLTRB(
-                  20,
-                  0,
-                  20,
-                  10,
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.filter_alt_outlined,
-                      color: AppTheme.green,
-                      size: 15,
-                    ),
+                                    selectedRating =
+                                        null;
 
-                    const SizedBox(width: 5),
+                                    isFiltering =
+                                        false;
 
-                    const Text(
-                      'Filter aktif',
-                      style: TextStyle(
-                        color: AppTheme.green,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                                    cafes =
+                                        SearchFunction
+                                            .searchCafe(
+                                      searchController
+                                          .text,
+                                    );
+                                  });
+                                },
 
-                    const Spacer(),
-
-                    // =====================================================
-                    // RESET FILTER
-                    // =====================================================
-
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedDistance = null;
-                          selectedRating = null;
-                          isFiltering = false;
-
-                          cafes =
-                              SearchFunction
-                                  .searchCafe(
-                            searchController.text,
-                          );
-                        });
-                      },
-
-                      child: const Text(
-                        'Reset',
-                        style: TextStyle(
-                          color: AppTheme.green,
-                          fontSize: 11,
+                                child:
+                                    const Text(
+                                  'Reset',
+                                  style:
+                                      TextStyle(
+                                    color:
+                                        AppTheme.green,
+                                    fontSize:
+                                        11,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
+
+                      // =====================================================
+                      // HASIL
+                      // =====================================================
+
+                      Expanded(
+                        child:
+                            cafes.isEmpty
+                                ? _emptySearch()
+                                : ListView
+                                    .builder(
+                                    padding:
+                                        const EdgeInsets
+                                            .fromLTRB(
+                                      20,
+                                      0,
+                                      20,
+                                      20,
+                                    ),
+
+                                    itemCount:
+                                        cafes.length,
+
+                                    itemBuilder:
+                                        (
+                                      context,
+                                      index,
+                                    ) {
+                                      final String
+                                          tokoId =
+                                          cafes[
+                                              index];
+
+                                      final cafe =
+                                          cafeData[
+                                              tokoId]!;
+
+                                      final String
+                                          distance =
+                                          getCafeDistance(
+                                        tokoId,
+                                      );
+
+                                      return _cafeItem(
+                                        context,
+                                        tokoId,
+                                        cafe['name'] ??
+                                            '',
+                                        cafe['rating'] ??
+                                            '0',
+                                        distance,
+                                        cafe['image'] ??
+                                            '',
+                                        cafe['about'] ??
+                                            '',
+                                        cafe['mapUrl'] ??
+                                            '',
+                                      );
+                                    },
+                                  ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-
-            // =====================================================
-            // HASIL
-            // =====================================================
-
-            Expanded(
-              child: cafes.isEmpty
-                  ? _emptySearch()
-                  : ListView.builder(
-                      padding:
-                          const EdgeInsets.fromLTRB(
-                        20,
-                        0,
-                        20,
-                        20,
-                      ),
-
-                      itemCount: cafes.length,
-
-                      itemBuilder:
-                          (context, index) {
-                        final tokoId =
-                            cafes[index];
-
-                        final cafe =
-                            cafeData[tokoId]!;
-
-                        return _cafeItem(
-                          context,
-                          tokoId,
-                          cafe['name']!,
-                          cafe['rating']!,
-                          cafe['distance']!,
-                          cafe['image']!,
-                          cafe['about']!,
-                          cafe['mapUrl']!,
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
+                    ],
+                  ),
       ),
     );
   }
@@ -409,13 +798,16 @@ class _ExplorePageState extends State<ExplorePage> {
       onTap: () {
         Navigator.push(
           context,
-
           MaterialPageRoute(
-            builder: (_) => CafeDetailPage(
+            builder: (_) =>
+                CafeDetailPage(
               tokoId: tokoId,
               cafeName: name,
               rating: rating,
-              distance: distance,
+              distance:
+                  distance.isEmpty
+                      ? '-'
+                      : distance,
               imageUrl: image,
               about: about,
               mapUrl: mapUrl,
@@ -426,69 +818,86 @@ class _ExplorePageState extends State<ExplorePage> {
 
       child: Container(
         margin:
-            const EdgeInsets.only(bottom: 12),
+            const EdgeInsets.only(
+          bottom: 12,
+        ),
 
         padding:
             const EdgeInsets.all(8),
 
-        decoration: BoxDecoration(
-          color: AppTheme.card,
+        decoration:
+            BoxDecoration(
+          color:
+              AppTheme.card,
 
           borderRadius:
-              BorderRadius.circular(14),
+              BorderRadius.circular(
+            14,
+          ),
 
           border: Border.all(
-            color: AppTheme.green
-                .withValues(alpha: 0.10),
+            color:
+                AppTheme.green.withValues(
+              alpha: 0.10,
+            ),
           ),
         ),
 
         child: Row(
           children: [
-            // =====================================================
-            // FOTO CAFE
-            // =====================================================
-
+            // FOTO
             ClipRRect(
               borderRadius:
-                  BorderRadius.circular(10),
-
-              child: Image.asset(
-                image,
-
-                width: 75,
-                height: 75,
-
-                fit: BoxFit.cover,
-
-                errorBuilder: (
-                  context,
-                  error,
-                  stackTrace,
-                ) {
-                  return Container(
-                    width: 75,
-                    height: 75,
-
-                    color:
-                        AppTheme.cardLight,
-
-                    child: const Icon(
-                      Icons.coffee,
-                      color:
-                          AppTheme.green,
-                    ),
-                  );
-                },
+                  BorderRadius.circular(
+                10,
               ),
+
+              child:
+                  image.trim().isEmpty
+                      ? Container(
+                          width: 75,
+                          height: 75,
+                          color:
+                              AppTheme.cardLight,
+                          child:
+                              const Icon(
+                            Icons.coffee,
+                            color:
+                                AppTheme.green,
+                          ),
+                        )
+                      : Image.network(
+                          image.trim(),
+                          width: 75,
+                          height: 75,
+                          fit: BoxFit.cover,
+                          errorBuilder:
+                              (
+                            context,
+                            error,
+                            stackTrace,
+                          ) {
+                            return Container(
+                              width: 75,
+                              height: 75,
+                              color:
+                                  AppTheme.cardLight,
+                              child:
+                                  const Icon(
+                                Icons.coffee,
+                                color:
+                                    AppTheme.green,
+                              ),
+                            );
+                          },
+                        ),
             ),
 
-            const SizedBox(width: 12),
+            const SizedBox(
+              width: 12,
+            ),
 
-            // =====================================================
-            // INFO CAFE
-            // =====================================================
-
+            // INFO
             Expanded(
               child: Column(
                 crossAxisAlignment:
@@ -497,16 +906,22 @@ class _ExplorePageState extends State<ExplorePage> {
                 children: [
                   Text(
                     name,
-
-                    style: const TextStyle(
-                      color: AppTheme.white,
+                    maxLines: 1,
+                    overflow:
+                        TextOverflow.ellipsis,
+                    style:
+                        const TextStyle(
+                      color:
+                          AppTheme.white,
                       fontWeight:
                           FontWeight.w600,
                       fontSize: 14,
                     ),
                   ),
 
-                  const SizedBox(height: 8),
+                  const SizedBox(
+                    height: 8,
+                  ),
 
                   Row(
                     children: [
@@ -517,19 +932,23 @@ class _ExplorePageState extends State<ExplorePage> {
                         size: 13,
                       ),
 
-                      const SizedBox(width: 4),
+                      const SizedBox(
+                        width: 4,
+                      ),
 
                       Text(
                         rating,
-
                         style:
                             const TextStyle(
-                          color: AppTheme.grey,
+                          color:
+                              AppTheme.grey,
                           fontSize: 11,
                         ),
                       ),
 
-                      const SizedBox(width: 12),
+                      const SizedBox(
+                        width: 12,
+                      ),
 
                       const Icon(
                         Icons
@@ -539,33 +958,43 @@ class _ExplorePageState extends State<ExplorePage> {
                         size: 13,
                       ),
 
-                      const SizedBox(width: 3),
+                      const SizedBox(
+                        width: 3,
+                      ),
 
-                      Text(
-                        distance,
-
-                        style:
-                            const TextStyle(
-                          color: AppTheme.grey,
-                          fontSize: 11,
+                      Expanded(
+                        child: Text(
+                          distance,
+                          maxLines: 1,
+                          overflow:
+                              TextOverflow
+                                  .ellipsis,
+                          style:
+                              const TextStyle(
+                            color:
+                                AppTheme.grey,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 5),
+                  const SizedBox(
+                    height: 5,
+                  ),
 
                   Text(
-                    about,
-
+                    about.isEmpty
+                        ? 'Coffee shop'
+                        : about,
                     maxLines: 1,
-
                     overflow:
                         TextOverflow.ellipsis,
-
                     style:
                         const TextStyle(
-                      color: AppTheme.grey,
+                      color:
+                          AppTheme.grey,
                       fontSize: 10,
                     ),
                   ),
@@ -573,26 +1002,29 @@ class _ExplorePageState extends State<ExplorePage> {
               ),
             ),
 
-            const SizedBox(width: 8),
-
-            // =====================================================
-            // ARROW
-            // =====================================================
+            const SizedBox(
+              width: 8,
+            ),
 
             Container(
               width: 34,
               height: 34,
 
-              decoration: BoxDecoration(
-                color: AppTheme.green,
-
+              decoration:
+                  BoxDecoration(
+                color:
+                    AppTheme.green,
                 borderRadius:
-                    BorderRadius.circular(10),
+                    BorderRadius.circular(
+                  10,
+                ),
               ),
 
               child: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.white,
+                Icons
+                    .arrow_forward_ios,
+                color:
+                    Colors.white,
                 size: 12,
               ),
             ),
@@ -603,7 +1035,7 @@ class _ExplorePageState extends State<ExplorePage> {
   }
 
   // =====================================================
-  // KALAU HASIL 0
+  // EMPTY
   // =====================================================
 
   Widget _emptySearch() {
@@ -615,33 +1047,37 @@ class _ExplorePageState extends State<ExplorePage> {
         children: [
           Icon(
             Icons.search_off,
-
-            color: AppTheme.grey
-                .withValues(alpha: 0.7),
-
+            color:
+                AppTheme.grey.withValues(
+              alpha: 0.7,
+            ),
             size: 50,
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(
+            height: 12,
+          ),
 
           const Text(
             'Cafe tidak ditemukan',
-
             style: TextStyle(
-              color: AppTheme.white,
+              color:
+                  AppTheme.white,
               fontSize: 15,
               fontWeight:
                   FontWeight.w600,
             ),
           ),
 
-          const SizedBox(height: 5),
+          const SizedBox(
+            height: 5,
+          ),
 
           const Text(
             'Coba gunakan kata kunci lain.',
-
             style: TextStyle(
-              color: AppTheme.grey,
+              color:
+                  AppTheme.grey,
               fontSize: 12,
             ),
           ),
