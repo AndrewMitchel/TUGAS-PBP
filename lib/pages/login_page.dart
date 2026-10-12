@@ -1,4 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../fungsi/favorite.dart';
+import '../fungsi/lastviewed.dart';
 
 import '../fungsi/user_profile.dart';
 import '../widgets/background.dart';
@@ -20,49 +26,111 @@ class _LoginPageState extends State<LoginPage> {
       TextEditingController();
 
   bool hidePassword = true;
+  bool isLoading = false;
+  bool _navigating = false;
+  StreamSubscription<AuthState>? _authSubscription;
 
-  void login() {
-    final username = usernameController.text.trim();
-    final password = passwordController.text.trim();
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.signedIn && !_navigating) {
+        final email = state.session?.user.email ?? Supabase.instance.client.auth.currentUser?.email;
+        if (email != null && mounted) _openHome(email);
+      }
+    });
+  }
 
-    // =====================================================
-    // VALIDASI LOGIN
-    // =====================================================
+  Future<void> login() async {
+    final email = usernameController.text.trim();
+    final password = passwordController.text;
 
-    if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Username dan password harus diisi',
-          ),
-          backgroundColor: AppTheme.greenDark,
-        ),
-      );
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Email dan password harus diisi');
       return;
     }
+    setState(() => isLoading = true);
+    try {
+      final response = await Supabase.instance.client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
+      if (response.user == null) throw const AuthException('Login gagal.');
+      // Navigation is handled by authStateChanges.
+    } on AuthException catch (e) {
+      _showMessage(e.message);
+    } catch (e) {
+      _showMessage('Login gagal: $e');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
-    // =====================================================
-    // SIMPAN USERNAME YANG SEDANG LOGIN
-    // =====================================================
+  Future<void> register() async {
+    final email = usernameController.text.trim();
+    final password = passwordController.text;
+    if (email.isEmpty || password.length < 6) {
+      _showMessage('Masukkan email valid dan password minimal 6 karakter.');
+      return;
+    }
+    setState(() => isLoading = true);
+    try {
+      final response = await Supabase.instance.client.auth.signUp(
+        email: email,
+        password: password,
+      );
+      if (response.session == null) {
+        _showMessage('Akun dibuat. Cek email untuk verifikasi, lalu login.');
+      } else {
+        // Navigation is handled by authStateChanges.
+      }
+    } on AuthException catch (e) {
+      _showMessage(e.message);
+    } catch (e) {
+      _showMessage('Pendaftaran gagal: $e');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
 
+  Future<void> loginWithGoogle() async {
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.flutter://callback',
+      );
+    } on AuthException catch (e) {
+      _showMessage(e.message);
+    } catch (e) {
+      _showMessage('Login Google gagal: $e');
+    }
+  }
+
+  Future<void> _openHome(String email) async {
+    if (_navigating || !mounted) return;
+    _navigating = true;
+    await FavoriteFunction.loadFromDatabase();
+    await LastViewedFunction.loadFromDatabase();
+    final username = email.split('@').first;
     UserProfile.setUsername(username);
-
-    // =====================================================
-    // MASUK KE HOME
-    // =====================================================
-
+    if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(
-          username: username,
-        ),
-      ),
+      MaterialPageRoute(builder: (_) => HomePage(username: username)),
     );
   }
 
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppTheme.greenDark),
+    );
+  }
+
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
     usernameController.dispose();
     passwordController.dispose();
     super.dispose();
@@ -150,8 +218,8 @@ class _LoginPageState extends State<LoginPage> {
 
                   _inputField(
                     controller: usernameController,
-                    hint: 'Username',
-                    icon: Icons.person_outline,
+                    hint: 'Email',
+                    icon: Icons.email_outlined,
                   ),
 
                   const SizedBox(height: 14),
@@ -192,7 +260,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: login,
+                      onPressed: isLoading ? null : login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
                             AppTheme.green,
@@ -204,16 +272,34 @@ class _LoginPageState extends State<LoginPage> {
                               BorderRadius.circular(15),
                         ),
                       ),
-                      child: const Text(
-                        'Login',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: isLoading
+                          ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Login', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                     ),
                   ),
 
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: isLoading ? null : loginWithGoogle,
+                      icon: const Icon(Icons.g_mobiledata, size: 28),
+                      label: const Text('Lanjutkan dengan Google'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppTheme.white,
+                        side: BorderSide(color: AppTheme.grey.withValues(alpha: 0.5)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Center(
+                    child: TextButton(
+                      onPressed: isLoading ? null : register,
+                      child: const Text('Belum punya akun? Daftar', style: TextStyle(color: AppTheme.green)),
+                    ),
+                  ),
                   const SizedBox(height: 25),
 
                   // =========================

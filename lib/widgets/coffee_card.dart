@@ -63,7 +63,7 @@ Widget coffeeCard(
             height: 135,
             width: double.infinity,
 
-            child: Image.asset(
+            child: Image.network(
               image,
               fit: BoxFit.cover,
 
