@@ -52,13 +52,29 @@ class _CafeDetailPageState extends State<CafeDetailPage> {
   // TOGGLE FAVORITE
   // =====================================================
 
-  void _toggleFavorite() {
+Future<void> _toggleFavorite() async {
+  try {
+    final result = await FavoriteFunction.toggleFavorite(
+      widget.tokoId,
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      isFavorite = FavoriteFunction.toggleFavorite(
-        widget.tokoId,
-      );
+      isFavorite = result;
     });
+  } catch (e) {
+    debugPrint('Gagal memperbarui favorite: $e');
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Gagal memperbarui favorite: $e'),
+      ),
+    );
   }
+}
 
   // =====================================================
   // FOTO CAFE
