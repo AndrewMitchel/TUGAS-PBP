@@ -94,9 +94,13 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> loginWithGoogle() async {
     try {
+      final webRedirectTo = Uri.base.host == 'andrewmitchel.github.io'
+          ? '${Uri.base.origin}/TUGAS-PBP/'
+          : Uri.base.origin;
+
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? Uri.base.origin : 'io.supabase.flutter://callback',
+        redirectTo: kIsWeb ? webRedirectTo : 'io.supabase.flutter://callback',
       );
     } on AuthException catch (e) {
       _message('Login Google gagal: ${e.message}');
