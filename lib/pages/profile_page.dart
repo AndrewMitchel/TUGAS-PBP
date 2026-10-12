@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../fungsi/favorite.dart';
 import '../fungsi/lastviewed.dart';
@@ -73,9 +74,8 @@ class _ProfilePageState
     // DENGARKAN PERUBAHAN FOTO
     // =====================================================
 
-    UserProfile.profilePhoto.addListener(
-      _photoChanged,
-    );
+    UserProfile.profilePhoto.addListener(_photoChanged);
+    UserProfile.avatarUrl.addListener(_photoChanged);
   }
 
   // =====================================================
@@ -130,10 +130,8 @@ class _ProfilePageState
     // HAPUS LISTENER FOTO
     // =====================================================
 
-    UserProfile.profilePhoto
-        .removeListener(
-      _photoChanged,
-    );
+    UserProfile.profilePhoto.removeListener(_photoChanged);
+    UserProfile.avatarUrl.removeListener(_photoChanged);
 
     super.dispose();
   }
@@ -229,17 +227,14 @@ class _ProfilePageState
               ),
 
               child:
-                  currentPhoto != null
+                  UserProfile.avatarUrl.value != null
                       ? ClipOval(
-                          child:
-                              Image.network(
-                            currentPhoto!
-                                .path,
-
+                          child: Image.network(
+                            UserProfile.avatarUrl.value!,
                             width: 80,
                             height: 80,
-
                             fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 40, color: AppTheme.grey),
                           ),
                         )
                       : const Icon(
@@ -565,7 +560,17 @@ class _ProfilePageState
                               Expanded(
                                 child:
                                     ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: () async {
+                                    try {
+                                      await Supabase.instance.client.auth.signOut();
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Logout gagal. Coba lagi.')),
+                                        );
+                                        return;
+                                      }
+                                    }
                                     // =====================================================
                                     // CLEAR FAVORITES
                                     // =====================================================

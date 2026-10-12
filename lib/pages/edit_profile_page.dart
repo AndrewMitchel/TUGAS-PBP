@@ -144,10 +144,7 @@ class _EditProfilePageState
       // SIMPAN FOTO KE USER PROFILE
       // =====================================================
 
-      UserProfile.setProfilePhoto(
-        pickedFile,
-      );
-
+  
       // =====================================================
       // UPDATE FOTO LANGSUNG
       // =====================================================
@@ -184,7 +181,7 @@ class _EditProfilePageState
   // SAVE PROFILE
   // =====================================================
 
-  void _saveProfile() {
+  Future<void> _saveProfile() async {
     final String newUsername =
         usernameController.text.trim();
 
@@ -209,9 +206,18 @@ class _EditProfilePageState
     // SIMPAN USERNAME
     // =====================================================
 
-    UserProfile.setUsername(
-      newUsername,
-    );
+    try {
+      await UserProfile.saveUsername(newUsername);
+      if (selectedPhoto != null) {
+        await UserProfile.saveProfilePhoto(selectedPhoto!);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan profil. Periksa koneksi dan konfigurasi Supabase Storage.')),
+      );
+      return;
+    }
 
     // =====================================================
     // FOTO SUDAH DISIMPAN SAAT DIPILIH
@@ -320,14 +326,22 @@ class _EditProfilePageState
                                   fit: BoxFit.cover,
                                 ),
                               )
-                            : const Icon(
+                            : (UserProfile.avatarUrl.value != null
+                                ? ClipOval(child: Image.network(
+                                    UserProfile.avatarUrl.value!,
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.person, size: 50, color: AppTheme.grey),
+                                  ))
+                                : const Icon(
                                 Icons.person,
 
                                 size: 50,
 
                                 color:
                                     AppTheme.grey,
-                              ),
+                              )),
                   ),
                 ),
 
