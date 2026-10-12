@@ -26,6 +26,36 @@ class UserProfile {
     }
   }
 
+  static Future<void> saveProfileDetails({
+    required String fullName,
+    required String username,
+  }) async {
+    final user = _db.auth.currentUser;
+    if (user == null) throw const AuthException('Silakan login kembali.');
+
+    final cleanFullName = fullName.trim();
+    final cleanUsername = username.trim();
+    if (cleanFullName.isEmpty) throw const AuthException('Nama lengkap wajib diisi.');
+    if (cleanUsername.isEmpty) throw const AuthException('Username wajib diisi.');
+
+    await _db.from('profiles').upsert({
+      'id': user.id,
+      'full_name': cleanFullName,
+      'username': cleanUsername,
+      'email': user.email,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    });
+    await _db.auth.updateUser(UserAttributes(data: {
+      'full_name': cleanFullName,
+      'username': cleanUsername,
+    }));
+    usernameValueUpdate(cleanUsername);
+  }
+
+  static void usernameValueUpdate(String value) {
+    username.value = value;
+  }
+
   static Future<void> saveUsername(String newUsername) async {
     final user = _db.auth.currentUser;
     if (user == null) throw const AuthException('Silakan login kembali.');

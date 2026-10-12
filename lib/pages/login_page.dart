@@ -71,14 +71,16 @@ class _LoginPageState extends State<LoginPage> {
       final response = await supabase.auth.signUp(
         email: email,
         password: password,
-        data: {'username': name},
+        // Simpan nama awal sebagai full_name. Username akan ditentukan
+        // di halaman profil setelah pendaftaran, tanpa perlu login ulang.
+        data: {'full_name': name},
       );
       if (response.session == null) {
-        _message('Akun berhasil didaftarkan. Verifikasi email terlebih dahulu, lalu login.');
+        _message('Akun berhasil dibuat. Cek email untuk verifikasi; setelah verifikasi, lanjutkan pengaturan profil.');
       } else {
         await supabase.from('profiles').upsert({
           'id': response.user!.id,
-          'username': name,
+          'full_name': name,
           'email': email,
         });
         await _continueAfterAuth();
@@ -94,13 +96,9 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> loginWithGoogle() async {
     try {
-      final webRedirectTo = Uri.base.host == 'andrewmitchel.github.io'
-          ? '${Uri.base.origin}/TUGAS-PBP/'
-          : Uri.base.origin;
-
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb ? webRedirectTo : 'io.supabase.flutter://callback',
+        redirectTo: kIsWeb ? Uri.base.origin : 'io.supabase.flutter://callback',
       );
     } on AuthException catch (e) {
       _message('Login Google gagal: ${e.message}');

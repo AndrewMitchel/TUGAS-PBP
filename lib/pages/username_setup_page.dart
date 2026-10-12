@@ -11,30 +11,34 @@ class UsernameSetupPage extends StatefulWidget {
 }
 
 class _UsernameSetupPageState extends State<UsernameSetupPage> {
-  final controller = TextEditingController();
+  final fullNameController = TextEditingController();
+  final usernameController = TextEditingController();
   bool loading = false;
 
   @override
   void initState() {
     super.initState();
-    final metadataName = Supabase.instance.client.auth.currentUser?.userMetadata?['full_name'] ??
-        Supabase.instance.client.auth.currentUser?.userMetadata?['name'];
-    if (metadataName is String) controller.text = metadataName;
+    final metadata = Supabase.instance.client.auth.currentUser?.userMetadata;
+    final fullName = metadata?['full_name'] ?? metadata?['name'];
+    final username = metadata?['username'];
+    if (fullName is String) fullNameController.text = fullName;
+    if (username is String) usernameController.text = username;
   }
 
   Future<void> save() async {
-    final name = controller.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama/username wajib diisi.')));
+    final fullName = fullNameController.text.trim();
+    final username = usernameController.text.trim();
+    if (fullName.isEmpty || username.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama lengkap dan username wajib diisi.')));
       return;
     }
     setState(() => loading = true);
     try {
-      await UserProfile.saveUsername(name);
-      await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomePage(username: name)));
+      await UserProfile.saveProfileDetails(fullName: fullName, username: username);
+      await Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => HomePage(username: username)));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal menyimpan username. Pastikan tabel profiles sudah disiapkan.')),
+        const SnackBar(content: Text('Gagal menyimpan profil. Pastikan kolom full_name dan username tersedia di tabel profiles.')),
       );
     } finally {
       if (mounted) setState(() => loading = false);
@@ -43,7 +47,8 @@ class _UsernameSetupPageState extends State<UsernameSetupPage> {
 
   @override
   void dispose() {
-    controller.dispose();
+    fullNameController.dispose();
+    usernameController.dispose();
     super.dispose();
   }
 
@@ -58,13 +63,22 @@ class _UsernameSetupPageState extends State<UsernameSetupPage> {
           const SizedBox(height: 22),
           const Text('Satu langkah lagi!', style: TextStyle(color: AppTheme.white, fontSize: 28, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          const Text('Tentukan nama yang akan tampil di halaman utama. Nama ini bisa diubah nanti di Settings.',
+          const Text('Lengkapi profil sekali saja. Setelah disimpan, kamu langsung masuk ke CoffeeSpot tanpa perlu login lagi.',
             style: TextStyle(color: AppTheme.grey, height: 1.5)),
           const SizedBox(height: 26),
-          TextField(controller: controller, textCapitalization: TextCapitalization.words,
+          TextField(controller: fullNameController, textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
             decoration: InputDecoration(
-              labelText: 'Nama / username',
-              prefixIcon: const Icon(Icons.person_outline, color: AppTheme.green),
+              labelText: 'Nama lengkap',
+              prefixIcon: const Icon(Icons.badge_outlined, color: AppTheme.green),
+              filled: true, fillColor: AppTheme.card,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+            )),
+          const SizedBox(height: 13),
+          TextField(controller: usernameController, textCapitalization: TextCapitalization.none,
+            decoration: InputDecoration(
+              labelText: 'Username',
+              prefixIcon: const Icon(Icons.alternate_email, color: AppTheme.green),
               filled: true, fillColor: AppTheme.card,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
             )),
