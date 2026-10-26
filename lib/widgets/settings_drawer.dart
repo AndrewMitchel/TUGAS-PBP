@@ -115,13 +115,13 @@ class SettingsDrawer extends StatelessWidget {
             _settingMenu(
               context,
               icon: Icons.info_outline,
-              title: 'About Coffee Finder',
+              title: 'About Coffee Spot',
               onTap: () {
                 showAboutDialog(
                   context: context,
 
                   applicationName:
-                      'Coffee Finder',
+                      'Coffee Spot by Andrew',
 
                   applicationVersion:
                       '1.0.0',

@@ -39,7 +39,7 @@ class CoffeeFinderApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
 
-      title: 'Coffee Finder',
+      title: 'Coffee spot',
 
       // =====================================================
       // THEME
