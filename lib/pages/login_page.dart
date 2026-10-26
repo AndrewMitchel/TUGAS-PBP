@@ -445,10 +445,11 @@ class _LoginPageState extends State<LoginPage> {
                       height: 50,
                       child: OutlinedButton.icon(
                         onPressed: isLoading ? null : loginWithGoogle,
-                        icon: const Icon(
-                          Icons.g_mobiledata,
-                          size: 28,
-                        ),
+                        icon: Image.asset(
+                          'assets/images/google.png',
+                             width: 24,
+                             height: 24,
+),
                         label: const Text('Lanjutkan dengan Google'),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppTheme.white,
