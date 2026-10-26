@@ -68,12 +68,23 @@ class _UsernameSetupPageState extends State<UsernameSetupPage> {
 
       if (!mounted) return;
 
+      final errorMessage = e.toString().toLowerCase();
+
+      String message;
+
+      if (errorMessage.contains('profiles_username_key') ||
+          errorMessage.contains('duplicate key value') ||
+          errorMessage.contains('23505')) {
+        message =
+            'Username is already taken. Please choose another username.';
+      } else {
+        message = 'Gagal menyimpan profil. Silakan coba lagi.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: SelectableText(
-            'Gagal menyimpan profil:\n$e',
-          ),
-          duration: const Duration(seconds: 12),
+          content: Text(message),
+          duration: const Duration(seconds: 4),
         ),
       );
     } finally {
