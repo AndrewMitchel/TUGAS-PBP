@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../fungsi/delete_account.dart';
 import '../theme/app_theme.dart';
 import '../pages/edit_profile_page.dart';
+import '../pages/login_page.dart';
 
 // =====================================================
 // SETTINGS DRAWER
@@ -18,31 +20,20 @@ class SettingsDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      // =====================================================
-      // WARNA DRAWER
-      // =====================================================
-
       backgroundColor: AppTheme.background,
-
       child: SafeArea(
         child: Column(
           children: [
-            // =====================================================
             // HEADER
-            // =====================================================
-
             Container(
               width: double.infinity,
-
               padding: const EdgeInsets.fromLTRB(
                 20,
                 25,
                 20,
                 25,
               ),
-
               color: AppTheme.card,
-
               child: const Row(
                 children: [
                   Icon(
@@ -50,9 +41,7 @@ class SettingsDrawer extends StatelessWidget {
                     color: AppTheme.green,
                     size: 25,
                   ),
-
                   SizedBox(width: 12),
-
                   Text(
                     'Settings',
                     style: TextStyle(
@@ -65,16 +54,10 @@ class SettingsDrawer extends StatelessWidget {
               ),
             ),
 
-            // =====================================================
             // ACCOUNT
-            // =====================================================
-
             _sectionTitle('Account'),
 
-            // =====================================================
             // EDIT PROFILE
-            // =====================================================
-
             _settingMenu(
               context,
               icon: Icons.person_outline,
@@ -93,10 +76,7 @@ class SettingsDrawer extends StatelessWidget {
               },
             ),
 
-            // =====================================================
             // DELETE ACCOUNT
-            // =====================================================
-
             _settingMenu(
               context,
               icon: Icons.delete_outline,
@@ -108,10 +88,7 @@ class SettingsDrawer extends StatelessWidget {
 
             const Spacer(),
 
-            // =====================================================
             // ABOUT
-            // =====================================================
-
             _settingMenu(
               context,
               icon: Icons.info_outline,
@@ -119,13 +96,8 @@ class SettingsDrawer extends StatelessWidget {
               onTap: () {
                 showAboutDialog(
                   context: context,
-
-                  applicationName:
-                      'Coffee Spot by Andrew',
-
-                  applicationVersion:
-                      '1.0.0',
-
+                  applicationName: 'Coffee Spot by Andrew',
+                  applicationVersion: '1.0.0',
                   applicationLegalese:
                       'Coffee recommendation application.',
                 );
@@ -151,13 +123,10 @@ class SettingsDrawer extends StatelessWidget {
         20,
         8,
       ),
-
       child: Align(
         alignment: Alignment.centerLeft,
-
         child: Text(
           title,
-
           style: const TextStyle(
             color: AppTheme.grey,
             fontSize: 12,
@@ -180,22 +149,18 @@ class SettingsDrawer extends StatelessWidget {
   }) {
     return ListTile(
       onTap: onTap,
-
       leading: Icon(
         icon,
         color: AppTheme.grey,
         size: 21,
       ),
-
       title: Text(
         title,
-
         style: const TextStyle(
           color: AppTheme.white,
           fontSize: 13,
         ),
       ),
-
       trailing: const Icon(
         Icons.chevron_right,
         color: AppTheme.grey,
@@ -209,72 +174,110 @@ class SettingsDrawer extends StatelessWidget {
   // =====================================================
 
   void _showDeleteDialog(BuildContext context) {
-    showDialog(
+    showDialog<void>(
       context: context,
-
       builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: AppTheme.card,
+        bool isDeleting = false;
 
-          title: const Text(
-            'Delete Account?',
-
-            style: TextStyle(
-              color: AppTheme.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          content: const Text(
-            'This action will permanently delete your account.',
-
-            style: TextStyle(
-              color: AppTheme.grey,
-              fontSize: 13,
-            ),
-          ),
-
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext);
-              },
-
-              child: const Text(
-                'Cancel',
-
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppTheme.card,
+              title: const Text(
+                'Delete Account?',
                 style: TextStyle(
-                  color: AppTheme.grey,
+                  color: AppTheme.white,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-            ),
-
-            ElevatedButton(
-              onPressed: () {
-                // =====================================================
-                // NANTI DISAMBUNGKAN KE API / DATABASE
-                // =====================================================
-
-                Navigator.pop(dialogContext);
-
-                ScaffoldMessenger.of(context)
-                    .showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Delete account belum terhubung ke database.',
+              content: const Text(
+                'This action will permanently delete your account and its associated data. This cannot be undone.',
+                style: TextStyle(
+                  color: AppTheme.grey,
+                  fontSize: 13,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () {
+                          Navigator.pop(dialogContext);
+                        },
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: AppTheme.grey,
                     ),
                   ),
-                );
-              },
+                ),
+                ElevatedButton(
+                  onPressed: isDeleting
+                      ? null
+                      : () async {
+                          setDialogState(() {
+                            isDeleting = true;
+                          });
 
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
+                          try {
+                            await DeleteAccountService.deleteAccount();
 
-              child: const Text('Delete'),
-            ),
-          ],
+                            if (!context.mounted) return;
+
+                            Navigator.of(dialogContext).pop();
+
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Akun berhasil dihapus.',
+                                  ),
+                                ),
+                              );
+
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const LoginPage(),
+                              ),
+                              (route) => false,
+                            );
+                          } catch (error) {
+                            if (!context.mounted) return;
+
+                            setDialogState(() {
+                              isDeleting = false;
+                            });
+
+                            ScaffoldMessenger.of(context)
+                              ..hideCurrentSnackBar()
+                              ..showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Gagal menghapus akun: $error',
+                                  ),
+                                ),
+                              );
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: isDeleting
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Delete'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
